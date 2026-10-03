@@ -5,6 +5,7 @@ import SphereCanvas from './sphere/SphereCanvas.jsx';
 import AssistantCaptions from './AssistantCaptions.jsx';
 import { LiveVoiceSession } from './eleven-voice.js';
 import { afterVoiceClose } from './voice-presence.mjs';
+import { mosaicCircleCenter } from './mosaic-transition.mjs';
 import { recordPlaygroundVoice } from './playground-services.mjs';
 import { outlineBriefing, chapterBriefing, refusal } from './study-material.mjs';
 import './style.css';
@@ -15,7 +16,7 @@ import './talk-screen.css';
 const Mosaic = new URLSearchParams(window.location.search).has('sphere') ? SphereCanvas : VoiceCanvas;
 // A build for a static host names a public agent, because there is no server to ask for a token.
 const VOICE = { agentId: import.meta.env.VITE_ELEVENLABS_AGENT_ID || '', workletPath: `${import.meta.env.BASE_URL}eleven-raw-audio.js` };
-// Nothing can be dragged onto a phone, so it is not asked to.
+// A phone is touched, not pointed at.
 const TOUCH = window.matchMedia?.('(pointer: coarse)').matches ?? false;
 // The voice session's messages are written for a desk; a phone is tapped, and keeps its permissions elsewhere.
 const say = text => !TOUCH ? text : text.replace(/\bClick\b/g, 'Tap').replace(/\bclick\b/g, 'tap')
@@ -24,6 +25,10 @@ const RESTING = TOUCH ? 'Resting. Touch the screen and Luna is back.' : 'Resting
 const RECONNECTING = 'Lost the connection. Reconnecting…';
 const ENDED = 'The voice connection ended. Click the mosaic to reconnect.';
 const PUT_AWAY = 'The person has put the document away. Do not refer to it again unless they hand you one.';
+// Two presses on the mosaic this close together, in time and in place, ask for a document.
+const TWICE = 400, TWICE_APART = 30, MOSAIC_REACH = 150;
+// How long a document's or a chapter's name stays up after it is taken in or chosen.
+const NAMED = 3200;
 
 function App() {
   const [state, setState] = useState('idle');
@@ -35,7 +40,12 @@ function App() {
   const [reading, setReading] = useState('');
   const [dragging, setDragging] = useState(false);
   const [intake, setIntake] = useState(null);
-  const screen = useRef(null), orb = useRef(null), session = useRef(null), picker = useRef(null), shelf = useRef(null), pegs = useRef(null), held = useRef(null);
+  // Nothing is written at the foot of the page. A name appears for a moment where Luna's words go:
+  // the document's when it has been read, a chapter's when its stone is chosen or pointed at.
+  const [named, setNamed] = useState(null);
+  const [pointed, setPointed] = useState(-1);
+  const screen = useRef(null), orb = useRef(null), session = useRef(null), picker = useRef(null), pegs = useRef(null), held = useRef(null);
+  const naming = useRef(null), pressed = useRef({ at: -Infinity, x: 0, y: 0 });
   const level = useRef(0), captionCapacity = useRef(76);
   // Without a session the page is retrying on a timer, resting until someone
   // is back, or waiting for a person to fix something.
@@ -102,6 +112,12 @@ function App() {
     void live.start();
   }
 
+  function name(number, title) {
+    clearTimeout(naming.current);
+    setNamed({ number, title });
+    naming.current = setTimeout(() => setNamed(null), NAMED);
+  }
+
   // Where on the mosaic's surface something happened.
   function point(event) {
     const bounds = screen.current.getBoundingClientRect();
@@ -121,6 +137,7 @@ function App() {
       study.current = { material: held, chapter: -1 };
       setMaterial(held);
       setChapter(-1);
+      name(0, held.title);
       session.current?.sendContext(outlineBriefing(held));
     } catch (problem) {
       setError(problem?.message || 'Could not read that PDF.');
@@ -132,6 +149,7 @@ function App() {
     if (!held?.chapters[index] || index === chosen) return;
     study.current = { material: held, chapter: index };
     setChapter(index);
+    name(index + 1, held.chapters[index].title);
     for (const part of chapterBriefing(held, index)) session.current?.sendContext(part);
   }
 
@@ -140,6 +158,8 @@ function App() {
     study.current = { material: null, chapter: -1 };
     setMaterial(null);
     setChapter(-1);
+    clearTimeout(naming.current);
+    setNamed(null);
     session.current?.sendContext(PUT_AWAY);
   }
 
@@ -166,8 +186,15 @@ function App() {
       if (file) void take(file, point(event));
     };
     const press = event => {
-      const at = point(event), hit = pegs.current?.at(at.x, at.y) ?? -1;
-      if (hit >= 0) choose(hit);
+      const at = point(event), hit = pegs.current?.at(at.x, at.y) ?? -1, last = pressed.current;
+      if (hit >= 0) { pressed.current = { at: -Infinity, x: 0, y: 0 }; choose(hit); return; }
+      // Pressing the mosaic twice opens the file picker: the way in where nothing can be dragged.
+      const bounds = screen.current.getBoundingClientRect(), centre = mosaicCircleCenter(bounds.width, bounds.height);
+      const onMosaic = Math.hypot(at.x - centre.x, at.y - centre.y) < MOSAIC_REACH, now = performance.now();
+      if (onMosaic && now - last.at < TWICE && Math.hypot(at.x - last.x, at.y - last.y) < TWICE_APART) {
+        pressed.current = { at: -Infinity, x: 0, y: 0 };
+        picker.current?.click();
+      } else pressed.current = { at: onMosaic ? now : -Infinity, x: at.x, y: at.y };
     };
     document.addEventListener('pointerdown', touch);
     document.addEventListener('keydown', touch);
@@ -190,6 +217,7 @@ function App() {
       document.removeEventListener('drop', drop);
       document.removeEventListener('click', press);
       clearTimeout(away.current.timer);
+      clearTimeout(naming.current);
       const live = session.current;
       session.current = null;
       void live?.close();
@@ -199,44 +227,39 @@ function App() {
   const live = state === 'listening' || state === 'speaking';
   const label = state === 'speaking' ? 'Luna is speaking' : state === 'listening' ? 'Luna is listening'
     : state === 'connecting' ? 'Connecting to Luna' : 'Start voice session';
-  // A file chosen from the shelf comes up from the shelf, as a dropped one comes from where it was let go.
+  // A file chosen from the picker comes up from the foot of the page, as a dropped one comes from where it was let go.
   const picked = event => {
-    const file = event.target.files?.[0];
+    const file = event.target.files?.[0], bounds = screen.current.getBoundingClientRect();
     event.target.value = '';
-    if (!file) return;
-    const bounds = screen.current.getBoundingClientRect(), from = shelf.current?.getBoundingClientRect();
-    void take(file, from ? { x: from.left + from.width / 2 - bounds.left, y: from.top + from.height / 2 - bounds.top } : { x: bounds.width / 2, y: bounds.height });
+    if (file) void take(file, { x: bounds.width / 2, y: bounds.height });
   };
+  const shown = pointed >= 0 && material?.chapters[pointed] ? { number: pointed + 1, title: material.chapters[pointed].title } : named;
   return <div className="app mosaic-only">
     <main ref={screen} className="study-screen" aria-label="Voice conversation">
       <Mosaic state={state === 'paused' ? 'idle' : state === 'connecting' ? 'thinking' : state} levelRef={level} audioRef={audio} orbRef={orb}
         dragging={dragging} dragPositionRef={held} intake={intake} onIntakeDone={() => setIntake(null)}
-        chapters={material?.chapters.length || 0} chapter={chapter} chapterRef={pegs}/>
+        chapters={material?.chapters.length || 0} chapter={chapter} chapterRef={pegs} onChapterPoint={setPointed}/>
       <div className="voice-stage">
         {/* Only a mosaic that is not live can be pressed, and pressing it can only start Luna. */}
         {live || state === 'connecting'
           ? <div ref={orb} className="orb-button is-live" role="img" aria-label={label}/>
           : <button ref={orb} className="orb-button" onClick={connect} aria-label={label}/>}
-        <AssistantCaptions text={subtitle} state={state} error={say(error)} hostRef={screen}
+        <AssistantCaptions text={subtitle} state={state} error={say(error)} visible={!shown} hostRef={screen}
           onCapacity={limit => { captionCapacity.current = limit; session.current?.setCaptionMaxChars(limit); }}/>
+        {shown && !error && <p className="study-name" role="status">
+          {shown.number > 0 && <span className="study-number">{shown.number}</span>}{shown.title}
+        </p>}
       </div>
-      {/* The document is typeset here; its stones on the mosaic only mark and point. */}
-      <section ref={shelf} className="study-shelf" aria-label="Study material" aria-live="polite">
-        {reading ? <p className="shelf-note">Reading {reading}…</p>
-          : material ? <>
-            <p className="shelf-title">
-              <span>{material.title}</span>
-              <button className="shelf-away" onClick={putAway} aria-label={`Put away ${material.title}`}>×</button>
-            </p>
-            <ol className="shelf-chapters">{material.chapters.map((item, index) =>
-              <li key={`${material.id}-${index}`}>
-                <button aria-pressed={index === chapter} onClick={() => choose(index)}>
-                  <span className="shelf-number">{index + 1}</span>{item.title}
-                </button>
-              </li>)}</ol>
-          </>
-          : <button className="shelf-add" onClick={() => picker.current?.click()}>{dragging ? 'Drop the PDF and Luna will take it in'
-            : TOUCH ? 'Add a PDF to study it with Luna' : 'Drop a PDF here to study it with Luna'}</button>}
+      {/* Nothing is shown here. A keyboard or a screen reader still needs something to land on, and it shows only while a key has it. */}
+      <section className="study-keys" aria-label="Study material">
+        <button onClick={() => picker.current?.click()}>Add a PDF to study with Luna</button>
+        {material && <>
+          {material.chapters.map((item, index) =>
+            <button key={`${material.id}-${index}`} aria-pressed={index === chapter} onClick={() => choose(index)}>
+              <span className="study-number">{index + 1}</span>{item.title}
+            </button>)}
+          <button onClick={putAway}>Put away {material.title}</button>
+        </>}
         <input ref={picker} type="file" accept="application/pdf,.pdf" hidden onChange={picked}/>
       </section>
     </main>

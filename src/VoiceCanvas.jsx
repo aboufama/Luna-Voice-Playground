@@ -68,9 +68,9 @@ export function stoneAtlas(tiles,glazes=[]){
 
 // Every stone is a rigid polygon. Only its position, rotation and glaze can change.
 // The same set assembles the voice medallion and the whiteboard's quiet frame.
-export default function VoiceCanvas({state,levelRef,audioRef,dragging=false,dragPositionRef,boardOpen=false,boardMeasure,orbRef,intake,onIntakeDone,chapters=0,chapter=-1,chapterRef}) {
+export default function VoiceCanvas({state,levelRef,audioRef,dragging=false,dragPositionRef,boardOpen=false,boardMeasure,orbRef,intake,onIntakeDone,chapters=0,chapter=-1,chapterRef,onChapterPoint}) {
   const canvasRef=useRef(null),live=useRef({}),redraw=useRef(null),relayout=useRef(null);
-  live.current={state,dragging,boardOpen,boardMeasure,intake,onIntakeDone,chapters,chapter};
+  live.current={state,dragging,boardOpen,boardMeasure,intake,onIntakeDone,chapters,chapter,onChapterPoint};
   useEffect(()=>{
     const canvas=canvasRef.current,context=canvas.getContext('2d');if(!context)return;
     const surface=canvas.parentElement.parentElement,motion=matchMedia('(prefers-reduced-motion: reduce)');
@@ -180,7 +180,7 @@ export default function VoiceCanvas({state,levelRef,audioRef,dragging=false,drag
       const nearness=current.dragging&&held?.45+.55*ease(1-(Math.hypot(held.x-cx,held.y-cy)-150*unit)/(420*unit)):taking?1:0;
       hatch.open=reduced?nearness:hatch.open+(nearness-hatch.open)*(1-Math.exp(-dt/(nearness>hatch.open?130:240)));
       const reach=pointer.active?chapterAt(pointer.x,pointer.y):-1;
-      if(reach!==pointed){pointed=reach;surface.classList.toggle('on-chapter',pointed>=0);}
+      if(reach!==pointed){pointed=reach;surface.classList.toggle('on-chapter',pointed>=0);current.onChapterPoint?.(pointed);}
       light.step({state:current.state,level,input:sounding?heard:null,output:sounding?spoken:null,time,reduced,chapters:current.chapters,chapter:current.chapter,pointed,hatch});
       const pointerNear=pointer.active&&Math.hypot(pointer.x-cx,pointer.y-cy)<190*unit&&time-pointer.movedAt<650;
       rest.step({dt,reduced,allowFocus:!current.boardOpen&&!current.dragging&&!current.intake,resting:current.state==='idle'||current.state==='listening'&&level<.016,

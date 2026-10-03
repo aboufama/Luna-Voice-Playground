@@ -29,11 +29,11 @@ let cut = null;
 // Luna's mosaic as a sphere of rigid tiles. Same props, place and size as the
 // flat VoiceCanvas, which it falls back to where WebGL2 is unavailable.
 export default function SphereCanvas(props) {
-  const { state, levelRef, audioRef, dragging = false, dragPositionRef, intake = null, onIntakeDone, chapters = 0, chapter = -1, chapterRef } = props;
+  const { state, levelRef, audioRef, dragging = false, dragPositionRef, intake = null, onIntakeDone, chapters = 0, chapter = -1, chapterRef, onChapterPoint } = props;
   const canvasRef = useRef(null), stateRef = useRef(state), redraw = useRef(null), study = useRef({});
   const [flat, setFlat] = useState(false), [context, setContext] = useState(0);
   stateRef.current = state;
-  study.current = { dragging, intake, onIntakeDone, chapters, chapter };
+  study.current = { dragging, intake, onIntakeDone, chapters, chapter, onChapterPoint };
 
   useEffect(() => {
     if (flat) return undefined;
@@ -79,7 +79,7 @@ export default function SphereCanvas(props) {
       motion.step({ state: stateRef.current, level: levelRef?.current || 0, input: sounding ? heard : null, output: sounding ? spoken : null, time, reduced, gaze: watching && !held ? gaze : null, hatch, intake: taking, chapters: now.chapters, chapter: now.chapter });
       if (taking && motion.taken() === taking.id && done !== taking.id) { done = taking.id; now.onIntakeDone?.(); }
       const reach = watching ? chapterAt(pointer.x, pointer.y) : -1;
-      if (reach !== pointed) { pointed = reach; surface.classList.toggle('on-chapter', pointed >= 0); }
+      if (reach !== pointed) { pointed = reach; surface.classList.toggle('on-chapter', pointed >= 0); now.onChapterPoint?.(pointed); }
       renderer.draw(motion.tiles, motion.sway, motion.dial, lens, nudgeX, nudgeY);
       // Reduced motion draws one still frame per change and then waits.
       if (!reduced) frame = requestAnimationFrame(draw);
