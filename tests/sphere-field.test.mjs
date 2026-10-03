@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { createMosaicField } from '../src/mosaic-field.mjs';
 import { stonePigments } from '../src/mosaic-pigment.mjs';
 import { createSphereField, motifStrength, faceMotif, onSphere, RADIUS, PITCH, CENTRE, RINGS, COURSES, FACE_ARC, SCALE, KIND } from '../src/sphere/sphere-field.mjs';
-import { createTileTemplate, createBedMesh, tilePoint, SIDES, PROFILE, MORTAR, RECESS, RING } from '../src/sphere/sphere-mesh.mjs';
+import { createTileTemplate, createCellTemplate, createCells, cellPoint, tilePoint, SIDES, PROFILE, MORTAR, RECESS, RING, SHELL } from '../src/sphere/sphere-mesh.mjs';
 import { createRock, ROCK_SIZE } from '../src/sphere/sphere-rock.mjs';
 import { quatRotate } from '../src/sphere/sphere-math.mjs';
 
@@ -209,31 +209,42 @@ test('one stone is a closed solid: two faces and a rounded shoulder between them
   }
 });
 
-test('the mortar is a stack of rigid rings, one to a course, that together make the sphere', () => {
-  const edges = Array.from(field.courseEdge, edge => edge / RADIUS), bed = createBedMesh(edges);
+test('the mortar is a shell of rigid cells, one to a place, that together make the hollow sphere', () => {
+  const edges = Array.from(field.courseEdge, edge => edge / RADIUS), cells = createCells(field, edges), slab = createCellTemplate();
   // The rings run from the pole facing the viewer to the far one, with no gap and no overlap.
   assert.equal(edges.length, COURSES + 1);
   assert.ok(edges[0] === 0 && Math.abs(edges.at(-1) - Math.PI) < 1e-6 && edges.every((edge, ring) => ring === 0 || edge > edges[ring - 1]));
-  const rings = new Set();
-  for (let at = 0; at < bed.points.length; at += 4) {
-    assert.ok(Math.abs(Math.hypot(bed.points[at], bed.points[at + 1], bed.points[at + 2]) - 1) < 1e-6);
-    // Each point belongs to one ring and lies in that ring's own band.
-    const ring = bed.points[at + 3], polar = Math.acos(Math.max(-1, Math.min(1, bed.points[at + 2])));
-    assert.ok(Number.isInteger(ring) && polar > edges[ring] - 1e-4 && polar < edges[ring + 1] + 1e-4);
-    rings.add(ring);
+  // Every socket has its cell; the cap at each pole is cut along its neighbouring ring's places; and the cells of a ring go exactly once round it.
+  assert.equal(cells.count, field.sockets.count - 2 + field.places[1] + field.places[COURSES - 2]);
+  assert.equal(new Set(cells.socket).size, field.sockets.count);
+  const round = new Float64Array(COURSES);
+  for (let cell = 0; cell < cells.count; cell++) {
+    const [from, to, start, stop] = cells.spans.subarray(cell * 4, cell * 4 + 4), ring = cells.ring[cell];
+    assert.ok(Math.abs(from - edges[ring]) < 1e-6 && Math.abs(to - edges[ring + 1]) < 1e-6 && stop > start);
+    assert.equal(field.sockets.course[cells.socket[cell]], ring);
+    round[ring] += stop - start;
   }
-  assert.equal(rings.size, COURSES);
-  for (let at = 0; at < bed.indices.length; at += 3) {
-    const [a, b, c] = [0, 1, 2].map(k => bed.points.subarray(bed.indices[at + k] * 4, bed.indices[at + k] * 4 + 4));
-    // No triangle joins two rings, so each can turn without its neighbours.
-    assert.ok(a[3] === b[3] && b[3] === c[3]);
-    const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], v = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
-    const normal = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
-    // Every triangle faces outward (or is the vanishing sliver at a pole).
-    assert.ok(normal[0] * (a[0] + b[0] + c[0]) + normal[1] * (a[1] + b[1] + c[1]) + normal[2] * (a[2] + b[2] + c[2]) > -1e-9);
+  assert.ok(round.every(turn => Math.abs(turn - Math.PI * 2) < 1e-3));
+  // A cell is a solid slab: a top at the mortar's surface, an underside a shell's thickness below, and four cut
+  // sides, every one of them facing outward from the slab. Nothing joins two cells, so any can be carried off alone.
+  let faces = 0;
+  for (let cell = 0; cell < cells.count; cell += 7) {
+    const span = cells.spans.subarray(cell * 4, cell * 4 + 4);
+    for (let at = 0; at < slab.indexCount; at += 3) {
+      const corners = [0, 1, 2].map(k => slab.corners.subarray(slab.indices[at + k] * 4, slab.indices[at + k] * 4 + 4));
+      assert.ok(corners.every(corner => corner[3] === corners[0][3]), 'a triangle lies in one face');
+      const [a, b, c] = corners.map(corner => cellPoint(span, corner, RADIUS + MORTAR).point);
+      for (const [point, corner] of [[a, corners[0]], [b, corners[1]], [c, corners[2]]]) assert.ok(Math.abs(Math.hypot(...point) - (RADIUS + MORTAR - SHELL * corner[2])) < 1e-6);
+      const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], v = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+      const normal = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]], area = Math.hypot(...normal);
+      // (At a pole a cell narrows to a point, and the triangles there vanish.)
+      if (area < 1e-3) continue;
+      const middle = [0, 1, 2, 3].map(k => k === 3 ? corners[0][3] : (corners[0][k] + corners[1][k] + corners[2][k]) / 3), faced = cellPoint(span, middle, RADIUS + MORTAR).face;
+      assert.ok((normal[0] * faced[0] + normal[1] * faced[1] + normal[2] * faced[2]) / area > .8);
+      faces++;
+    }
   }
-  // The mortar lies well below the stones' faces: they stand clearly proud of it, in relief.
-  assert.ok(MORTAR > 0 && Math.abs(PROFILE.top - MORTAR - RECESS) < 1e-12 && RECESS > 1 && RECESS < PROFILE.top);
+  assert.ok(faces > 15_000);
 });
 
 test('the rock is made from numbers at start-up: seamless, fine-grained, sparsely veined and flecked', () => {

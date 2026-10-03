@@ -1,8 +1,8 @@
 # Luna UX Playground
 
-**http://127.0.0.1:5190/** is a single voice screen using the Luna mosaic. Luna is live whenever the page is in view: there is no start, stop, or mute control. Captions appear while Luna speaks; errors use the same quiet caption area.
+**http://127.0.0.1:5190/** is a single voice screen using the Luna mosaic, a sphere of stone. (**/?flat** shows the flat medallion it grew from.) Luna is live whenever the page is in view: there is no start, stop, or mute control. Captions appear while Luna speaks; errors use the same quiet caption area.
 
-There is no top bar, back button, main menu, dock, account control, hat picker, provider selector, or Library. The only study feature is taking in a PDF by dragging it onto the mosaic. Saved study data and old scenario URLs are ignored. The original `../Luna-Study` project is independent.
+There is no top bar, back button, main menu, dock, account control, hat picker, provider selector, or Library. The only study feature is taking in a PDF by dragging it onto the page. Nothing is written at the foot of the page. Saved study data and old scenario URLs are ignored. The original `../Luna-Study` project is independent.
 
 ## Always on
 
@@ -27,31 +27,34 @@ Grey stone means not connected. Colour means Luna is live.
 
 ## Study material
 
-Drag a PDF anywhere onto the page (or use the quiet line at the foot of the page to pick one).
+Drag a PDF anywhere onto the page. Where nothing can be dragged, press the mosaic twice and the file picker opens.
 
-- **While you hold it:** the side of the mosaic facing the file opens like a jaw, wider as the file comes closer.
-- **On the drop:** the document arrives as a stream of stones that join the mosaic, and the opening closes behind them.
-- **Chapters:** one stone per chapter then stands out of the rim, clockwise from the top. Press a stone, or its title in the list at the foot of the page, to choose that chapter; the chosen stone stands further out in the warm stone. The × puts the document away.
+- **In the hand:** the document is a small sheet of nine pale stones that goes where the pointer goes, a little to the sphere's side of it.
+- **The sphere cracks open:** where it faces the sheet, the shell breaks into six pieces, stones and mortar together, which swing out on their far edges and show the hollow inside. Cracked when the document is anywhere on the page, wider as it comes nearer; if the document moves round, the crack shuts and opens again there.
+- **On the drop:** the sheet's stones shoot in through the crack one after another and the pieces snap shut.
+- **Swallowed:** from where it went in, a band of stones turning over to the page's pale stone and back crosses the whole sphere. While the PDF is still being read it does so again.
+- **Chapters:** one stone per chapter then turns to the page's stone for good and stands up on its own ring, clockwise from the top. Point at one and its chapter's name shows where Luna's words go; press it to choose that chapter, and it turns to Luna's warm stone and stands twice as high. The document's name shows for a moment when it has been read.
 - **How chapters are found:** the PDF's own bookmarks if it has at least two; otherwise lines set as headings; otherwise even runs of pages. At most 24.
 - **What Luna knows:** the PDF is read in the browser and is never uploaded as a file. When it arrives Luna is told its title and chapter titles. When a chapter is chosen she is sent that chapter's text, up to 15,000 characters in three messages, and told plainly if it was cut short. This is the only study data that reaches ElevenLabs, and it goes through `sendContext` in `src/eleven-voice.js`; starting a conversation still sends nothing. Every new conversation (after a reconnect or a hidden tab) is told again.
 - **Limits:** PDFs only, up to 20 MB and 250 pages, text only (scans need OCR, which is not here). The document is held in memory and is gone on reload. Luna's agent prompt is still the casual-conversation one, so she will talk about the chapter but will not run a quiz unless asked.
+- **With a keyboard or a screen reader:** the same controls (add a PDF, each chapter, put the document away) are at the foot of the page, and can be seen only while a key has one of them.
 
-The reading is in `src/study-material-pdf.js`, the chapter and briefing logic in `src/study-material.mjs`, the hatch and the chapter stones in `src/mosaic-light.mjs`. The sphere at `/?sphere` takes a document in its own way, described below.
+The reading is in `src/study-material-pdf.js`, the chapter and briefing logic in `src/study-material.mjs`, the crack, the sheet and the chapter stones in `src/sphere/sphere-motion.mjs`. The flat medallion keeps its older way of taking a document in (`src/mosaic-light.mjs`).
 
 ## On a phone
 
 Both versions fit a phone held upright (checked at 390×844 and 375×667): the mosaic, two lines of caption, and the document's chapters, with nothing to scroll sideways. On its side a phone is too short for all three, so the page scrolls.
 
-- Nothing can be dragged onto a phone, so the line at the foot of the page reads "Add a PDF to study it with Luna" and opens the file picker. The stones then come up from that line, and the mosaic opens downward to take them.
+- Nothing can be dragged onto a phone: pressing the mosaic twice opens the file picker. The sheet then comes up from beyond the foot of the page, and the sphere cracks open downward to take it.
 - A chapter's stone can be tapped from further off than a mouse has to be (26 px instead of 15 or 16).
 - Messages say "tap" where they would say "click".
 
 ## Sphere
 
-**http://127.0.0.1:5190/?sphere** shows the same mosaic as a sphere of stone tesserae set in mortar, moving as a machine made of stone. The flat medallion stays the default. Voice behaviour is identical; only the picture changes.
+The mosaic is a hollow sphere of stone tesserae set in mortar, moving as a machine made of stone. The flat medallion at **/?flat** has the same voice behaviour; only the picture differs.
 
 - **Stones:** 3,596 rigid hand-cut stones, about a fifth larger than the flat medallion's, each with its own twelve-point outline, chipped corners, slight tilt and height. About 6% of the places are empty. A stone is its rock in colour and in relief: a split face that is domed, dished or ridged, with grain, pits and veins that catch the light, standing clearly proud of the mortar. Each palette colour is a real stone: lapis, yellow marble, a green stone for your voice, terracotta and red marble for Luna's, grey limestone when not connected.
-- **Mortar:** a stack of rigid rings, one to a course, each carrying its own stones. Rough and sandy, with recessed joints, mortar squeezed up against the stones, and a socket where each stone sits or is missing. It is made at start-up from the layout itself (`sphere-mortar.mjs`); there are no image files.
+- **Mortar:** a shell of rigid cells, one to a place, a few pixels thick; the cells of a course make a ring that turns as one, each carrying its own stone. Rough and sandy, with recessed joints, mortar squeezed up against the stones, and a socket where each stone sits or is missing. It is made at start-up from the layout itself (`sphere-mortar.mjs`); there are no image files.
 - **Light:** one light from the upper left. Stones and mortar shade what lies behind them, and shade gathers in joints and pits.
 - **Motion is mechanical.** Everything runs on a tick, twelve a second, and travels from one fixed stop to the next at one speed with a hard stop. Nothing fades, eases, drifts or changes colour in place.
   - A stone has two sides. To show a different stone it lifts clear of its socket, turns over and seats again, a quarter of a second in all; the side in the socket is the only one ever exchanged.
@@ -64,9 +67,9 @@ Both versions fit a phone held upright (checked at 390×844 and 375×667): the m
   - Quiet: a clock. One ring steps one place a second, carrying one raised stone as its hand.
   - Luna speaking: stones turn to her stone ring by ring from the pole, more rings the louder she is, and each syllable ratchets those rings a place and back.
   - You speaking: the rings at the outline turn to green stone and stand up as pistons, a pair of rings to each part of the spectrum and a notch to each step of loudness; each syllable knocks ring after ring in to the centre, and the sphere tips towards you.
-- **The same rule holds.** Two real objects are drawn, the mortar rings and the stones, twice a frame: first as the light sees them (depth only, to know what is in shadow), then the picture. Each stone gets only a rotation, a position and which stone is on each side. No blending, no image files, and nothing drawn after the picture. `tests/sphere-rigid.test.mjs` and `tests/sphere-motion.test.mjs` state these rules and fail if they are broken.
+- **The same rule holds.** Two real objects are drawn, the mortar's cells and the stones (the sphere's own, and the nine of a document's sheet), twice a frame: first as the light sees them (depth only, to know what is in shadow), then the picture. Each stone gets only a rotation, a position and which stone is on each side. No blending, no image files, and nothing drawn after the picture. `tests/sphere-rigid.test.mjs` and `tests/sphere-motion.test.mjs` state these rules and fail if they are broken.
 - It also turns one stop towards a moving pointer. Without WebGL2, or if the graphics context is lost and not restored, the flat medallion is shown instead.
-- **A PDF:** while a file is held over the page, the stones of the eight rings nearest the outline, on the side facing the file, stand on edge like the slats of a shutter: two rings when the file is far off, all eight when it is close. On the drop the slats lie flat again a ring a tick, outermost first, the sphere knocks three times, and one stone per chapter stands up out of its ring, clockwise from the top. The chosen chapter's stone turns to the warm stone and stands twice as high. Press a stone, or its title at the foot of the page, to choose.
+- **A PDF:** the shell cracks open towards it and swallows it; see Study material above.
 
 ## Voice
 
@@ -114,7 +117,7 @@ After frontend edits, run `npm run build` and refresh. Restart after server edit
 - `src/mosaic-light.mjs`: living light: colour, breathing, voice rings, and how far the stones travel. Timings and strengths are the constants at the top.
 - `src/mosaic-pigment.mjs`: the palette. Each stone's listening, crest, and Luna-speaking colours.
 - `src/mosaic-choreography.mjs`, `src/mosaic-rest.mjs`: the original course rotation and rim drift.
-- `src/sphere/`: the sphere. `sphere-field.mjs` lays the stones, gaps and motifs on the sphere, `sphere-motion.mjs` is the machine (ticks, stops, and what each state does), `sphere-mesh.mjs` is the stone shape and the mortar rings, `sphere-rock.mjs` and `sphere-mortar.mjs` generate the rock and mortar relief, `sphere-renderer.mjs` is the WebGL2 drawing, `SphereCanvas.jsx` mounts it.
+- `src/sphere/`: the sphere. `sphere-field.mjs` lays the stones, gaps and motifs on the sphere, `sphere-motion.mjs` is the machine (ticks, stops, what each state does, and how a document is swallowed), `sphere-mesh.mjs` is the stone shape and the mortar's cells, `sphere-rock.mjs` and `sphere-mortar.mjs` generate the rock and mortar relief, `sphere-renderer.mjs` is the WebGL2 drawing, `SphereCanvas.jsx` mounts it.
 - `src/talk-screen.css`: full-height layout after removing app controls.
 - `server.mjs`: static serving and private token exchange.
 - `vite.config.js`: the two builds, local and static. `shared/content-policy.mjs`: what the page may load and reach, for both.

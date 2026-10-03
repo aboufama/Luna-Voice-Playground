@@ -12,8 +12,8 @@ import './style.css';
 import './mosaic-stage.css';
 import './talk-screen.css';
 
-// /?sphere shows the mosaic as a sphere of tiles; the flat medallion stays the default.
-const Mosaic = new URLSearchParams(window.location.search).has('sphere') ? SphereCanvas : VoiceCanvas;
+// The mosaic is a sphere of stone; /?flat shows the flat medallion it grew from.
+const Mosaic = new URLSearchParams(window.location.search).has('flat') ? VoiceCanvas : SphereCanvas;
 // A build for a static host names a public agent, because there is no server to ask for a token.
 const VOICE = { agentId: import.meta.env.VITE_ELEVENLABS_AGENT_ID || '', workletPath: `${import.meta.env.BASE_URL}eleven-raw-audio.js` };
 // A phone is touched, not pointed at.
@@ -238,7 +238,7 @@ function App() {
     <main ref={screen} className="study-screen" aria-label="Voice conversation">
       <Mosaic state={state === 'paused' ? 'idle' : state === 'connecting' ? 'thinking' : state} levelRef={level} audioRef={audio} orbRef={orb}
         dragging={dragging} dragPositionRef={held} intake={intake} onIntakeDone={() => setIntake(null)}
-        chapters={material?.chapters.length || 0} chapter={chapter} chapterRef={pegs} onChapterPoint={setPointed}/>
+        chapters={material?.chapters.length || 0} chapter={chapter} chapterRef={pegs} onChapterPoint={setPointed} reading={Boolean(reading)}/>
       <div className="voice-stage">
         {/* Only a mosaic that is not live can be pressed, and pressing it can only start Luna. */}
         {live || state === 'connecting'

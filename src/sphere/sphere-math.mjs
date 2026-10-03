@@ -88,5 +88,22 @@ export function createLens({ radius, distance, apparent, half, reach = 24 }) {
     depthOffset: -2 * far * near / (far - near),
     // Where a point lands on screen, in CSS pixels from the sphere's centre.
     project(x, y, z) { const w = distance - z; return [focal * x / w, focal * y / w]; },
+    // And the other way: the point at height `z` that lands `right` and `up` of the sphere's centre.
+    place(right, up, z, out = new Float64Array(3)) { const w = distance - z; out[0] = right * w / focal; out[1] = up * w / focal; out[2] = z; return out; },
   };
 }
+
+// The shortest turn that carries one unit vector onto another.
+export function quatBetween(from, to, out = new Float64Array(4)) {
+  const dot = from[0] * to[0] + from[1] * to[1] + from[2] * to[2];
+  if (dot < -.999999) {
+    // Straight back: any axis square to `from` will do.
+    const x = Math.abs(from[0]) < .9 ? 1 : 0, y = x ? 0 : 1;
+    return quatAxis(from[1] * 0 - from[2] * y, from[2] * x - from[0] * 0, from[0] * y - from[1] * x, Math.PI, out);
+  }
+  out[0] = from[1] * to[2] - from[2] * to[1]; out[1] = from[2] * to[0] - from[0] * to[2]; out[2] = from[0] * to[1] - from[1] * to[0]; out[3] = 1 + dot;
+  return quatNormalize(out);
+}
+
+// A turn undone.
+export function quatConjugate(q, out = new Float64Array(4)) { out[0] = -q[0]; out[1] = -q[1]; out[2] = -q[2]; out[3] = q[3]; return out; }

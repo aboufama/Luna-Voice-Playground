@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createSphereField, RADIUS } from '../src/sphere/sphere-field.mjs';
-import { createSphereMotion, BANDS, STRIDE, TURN, PLACE } from '../src/sphere/sphere-motion.mjs';
-import { createTileTemplate, tilePoint, PROFILE, MORTAR, SIDES } from '../src/sphere/sphere-mesh.mjs';
+import { createSphereMotion, BANDS, STRIDE, TURN, PLACE, CELL_STRIDE } from '../src/sphere/sphere-motion.mjs';
+import { createTileTemplate, tilePoint, PROFILE, MORTAR, SIDES, SHELL } from '../src/sphere/sphere-mesh.mjs';
 import { VERTEX_SHADER, FRAGMENT_SHADER, BED_VERTEX_SHADER, BED_FRAGMENT_SHADER, BED_RADIUS } from '../src/sphere/sphere-renderer.mjs';
 import { quatRotate, quatToMat3, quatAxis, quatMul, createLens } from '../src/sphere/sphere-math.mjs';
 
@@ -130,11 +130,11 @@ test('the vertex shader turns and carries each stone, and has no way to stretch 
   assert.ok(lines.includes('vec3 placed = turn(aTurn, local) + aPlace.xyz;'));
   assert.ok(lines.includes('vec3 seen = uSway * placed;'));
   assert.ok(lines.includes('gl_Position = project(seen);'));
-  assert.ok(lines.includes('return vec4(seen.xy * uLens.x + uNudge * depth, uLens.w - uLens.z * depth, depth);'), 'a fixed lens, with perspective and nothing else');
+  assert.ok(lines.includes('return vec4(seen.xy * uZoom + uNudge * depth, uLens.z - uLens.y * depth, depth);'), 'a fixed lens, with perspective and nothing else');
   // The shape is built only from what is written once per stone, never from anything that changes.
   const shape = lines.filter(line => /\b(local|here|before|after|up|drawn)\b[^=;]*=/.test(line) && !/placed|seen/.test(line)).join(' ');
   assert.ok(shape.includes('outline(at)') && shape.includes('aThickness'));
-  assert.equal(/aTurn|aPlace|aFaces|uSway|uLens|uNudge/.test(shape), false);
+  assert.equal(/aTurn|aPlace|aFaces|uSway|uLens|uZoom|uNudge/.test(shape), false);
   // The moving inputs are used where a rigid motion uses them and nowhere else.
   const uses = name => (VERTEX_SHADER.match(new RegExp(`\\b${name}\\b`, 'g')) || []).length;
   assert.equal(uses('aTurn'), 6, 'declared, then turning the point, its normal and the three axes of its face');
@@ -167,20 +167,36 @@ test('a stone\'s grain is its own: read in the stone\'s coordinates, never the s
   assert.match(FRAGMENT_SHADER, /colour = vec4\(lit\(body, normal, shade, sunlit\(vSeen, normalize\(vNormal\)\)\), 1\.0\);/);
 });
 
-test('the mortar is rings that turn only with their own course and with the sphere, so nothing slides over it', () => {
+test('the mortar is cells that turn only with their own ring, their own piece of shell and the sphere, so nothing slides over it', () => {
   const lines = BED_VERTEX_SHADER.split('\n').map(line => line.trim());
-  // A ring's points are fixed. Two things move them: the ring's own dial about the axis through the poles, and the sphere's turn.
-  assert.ok(lines.includes('float dial = uDial[int(aPoint.w)];'));
-  assert.ok(lines.includes('vec3 turned = vec3(aPoint.x * vDial.x - aPoint.y * vDial.y, aPoint.x * vDial.y + aPoint.y * vDial.x, aPoint.z);'));
-  assert.ok(lines.includes(`vSeen = uSway * (turned * ${BED_RADIUS.toFixed(4)});`));
+  // A cell's shape is fixed. Three things move it, all of them rigid: its ring's dial about the axis through the poles,
+  // the turn and shift of the piece of shell it belongs to when the shell cracks open, and the sphere's turn.
+  assert.ok(lines.includes('float dial = uDial[int(aRing)];'));
+  assert.ok(lines.includes(`vec3 turned = vec3(point.x * vDial.x - point.y * vDial.y, point.x * vDial.y + point.y * vDial.x, point.z) * (${BED_RADIUS.toFixed(4)} - ${SHELL.toFixed(4)} * aCorner.z);`));
+  assert.ok(lines.includes('vec3 placed = turn(aHinge, turned) + aShift.xyz;'));
+  assert.ok(lines.includes('vSeen = uSway * placed;'));
   assert.ok(lines.includes('gl_Position = project(vSeen);'));
   assert.equal(/aTurn|aPlace|aFaces|uTime/.test(BED_VERTEX_SHADER), false);
+  // The piece's turn is a unit quaternion and nothing else: every socket's, in every frame, with a document about or not.
+  const cracked = createSphereMotion(field);
+  let carried = 0, worst = 0;
+  for (let frame = 0; frame < 360; frame++) {
+    const file = frame > 60 && frame < 200 ? { at: [210, -70, RADIUS + 26], aim: [.66, -.28, .7], near: Math.min(1, (frame - 60) / 60) } : null;
+    cracked.step({ state: 'listening', input: silence, output: silence, time: frame * FRAME, file, intake: frame >= 200 ? { id: 'pages', at: [210, -70, RADIUS + 26], aim: [.66, -.28, .7] } : null });
+    if (frame % 3) continue;
+    for (let socket = 0; socket < field.sockets.count; socket++) {
+      const at = socket * CELL_STRIDE, turn = cracked.shell.carried.subarray(at, at + 4);
+      worst = Math.max(worst, Math.abs(Math.hypot(...turn) - 1));
+      if (turn[3] < .9999) carried++;
+    }
+  }
+  assert.ok(carried > 1000 && worst < 1e-6, `pieces of shell were carried (${carried}) by turns of unit length to within ${worst}`);
   // It is lit by the same light as the stones, lies in their shadow, and is solid.
   const light = source => source.slice(source.indexOf('uniform vec3 uKey'), source.indexOf('}', source.indexOf('vec3 lit(')));
   assert.equal(light(BED_FRAGMENT_SHADER), light(FRAGMENT_SHADER));
   assert.match(BED_FRAGMENT_SHADER, /colour = vec4\(lit\(mortar, normal, shade, sunlit\(vSeen, surface\)\), 1\.0\);/);
   // Its sand, and the sockets and joints pressed into it, are its own: read where the ring itself is, before any turn.
-  assert.match(BED_VERTEX_SHADER, /vPoint = aPoint\.xyz;/);
+  assert.match(BED_VERTEX_SHADER, /vPoint = point;/);
   assert.match(BED_FRAGMENT_SHADER, /vec3 point = normalize\(vPoint\);/);
   assert.match(BED_FRAGMENT_SHADER, /vec3 at = point \* /);
   for (const map of ['uRock', 'uRelief']) {
@@ -211,24 +227,26 @@ test('the mortar is rings that turn only with their own course and with the sphe
   assert.ok(checked > 5000 && turned > .05, 'rings really turned while this was checked');
 });
 
-test('the renderer draws the mortar and the stones, as the light sees them and then as the viewer does, and nothing else', () => {
+test('the renderer draws the mortar\'s cells and the stones, as the light sees them and then as the viewer does, and nothing else', () => {
   const renderer = readFileSync(new URL('../src/sphere/sphere-renderer.mjs', import.meta.url), 'utf8');
   const used = new Set([...renderer.matchAll(/\bgl\.([A-Za-z0-9]+)\(/g)].map(match => match[1]));
   assert.deepEqual([...used].sort(), [
     'activeTexture', 'attachShader', 'bindBuffer', 'bindFramebuffer', 'bindTexture', 'bindVertexArray', 'bufferData', 'bufferSubData', 'clear',
     'clearColor', 'compileShader', 'createBuffer', 'createFramebuffer', 'createProgram', 'createShader', 'createTexture', 'createVertexArray',
-    'deleteBuffer', 'deleteFramebuffer', 'deleteProgram', 'deleteShader', 'deleteTexture', 'deleteVertexArray', 'drawBuffers', 'drawElements',
+    'deleteBuffer', 'deleteFramebuffer', 'deleteProgram', 'deleteShader', 'deleteTexture', 'deleteVertexArray', 'drawBuffers',
     'drawElementsInstanced', 'enable', 'enableVertexAttribArray', 'framebufferTexture2D', 'generateMipmap', 'getProgramInfoLog',
     'getProgramParameter', 'getShaderInfoLog', 'getShaderParameter', 'getUniformLocation', 'isContextLost', 'linkProgram', 'shaderSource',
-    'texImage2D', 'texParameteri', 'uniform1f', 'uniform1fv', 'uniform1i', 'uniform2f', 'uniform3f', 'uniform4f', 'uniformMatrix3fv',
+    'texImage2D', 'texParameteri', 'uniform1f', 'uniform1fv', 'uniform1i', 'uniform2f', 'uniform3f', 'uniformMatrix3fv',
     'useProgram', 'vertexAttribDivisor', 'vertexAttribPointer', 'viewport',
   ]);
-  // Two real objects, each drawn by one call: the mortar rings, then every stone at once.
+  // Two real objects, each drawn by one call: every cell of the mortar at once, then every stone at once
+  // (the sphere's own, and after them the stones of a document's sheet).
   assert.equal((renderer.match(/gl\.draw(Elements|Arrays)/g) || []).length, 2);
-  assert.match(renderer, /gl\.drawElements\(gl\.TRIANGLES, bed\.indices\.length, gl\.UNSIGNED_SHORT, 0\)/);
-  assert.match(renderer, /gl\.drawElementsInstanced\(gl\.TRIANGLES, template\.indexCount, gl\.UNSIGNED_BYTE, 0, field\.count\)/);
+  assert.match(renderer, /gl\.drawElementsInstanced\(gl\.TRIANGLES, slab\.indexCount, gl\.UNSIGNED_BYTE, 0, cells\.count\)/);
+  assert.match(renderer, /gl\.drawElementsInstanced\(gl\.TRIANGLES, template\.indexCount, gl\.UNSIGNED_BYTE, 0, blocks\)/);
+  assert.match(renderer, /const blocks = field\.count \+ field\.sheet\.count;/);
   // That pair is drawn twice a frame: what the light can see, then the picture. The picture is last, straight to the canvas.
-  const frame = renderer.slice(renderer.indexOf('draw(tiles, turned, dial, lens'), renderer.indexOf('dispose()'));
+  const frame = renderer.slice(renderer.indexOf('draw(tiles, turned, dial, shell, lens, view)'), renderer.indexOf('dispose()'));
   assert.deepEqual([...frame.matchAll(/scene\((\d)/g)].map(match => match[1]), ['1', '0']);
   assert.ok(frame.indexOf('gl.bindFramebuffer(gl.FRAMEBUFFER, null)') > 0 && frame.indexOf('gl.bindFramebuffer(gl.FRAMEBUFFER, null)') < frame.indexOf('scene(0'));
   assert.match(frame, /scene\(0[^;]*;\s*\},/, 'nothing is drawn after the picture');
@@ -243,10 +261,13 @@ test('the renderer draws the mortar and the stones, as the light sees them and t
   assert.equal((renderer.match(/texture\(uShadow,/g) || []).length, 1);
   // The canvas is cleared to nothing: there is no backdrop behind the sphere.
   assert.match(renderer, /gl\.clearColor\(0, 0, 0, 0\)/);
-  // The only thing written again after start-up is each stone's turn, place and sides. The mortar is never written again.
-  assert.equal((renderer.match(/gl\.bufferSubData\(/g) || []).length, 1);
-  assert.equal((renderer.match(/gl\.DYNAMIC_DRAW/g) || []).length, 1);
-  assert.match(renderer, /buffer\(gl\.ARRAY_BUFFER, bed\.points, gl\.STATIC_DRAW\)/);
+  // Two things are written again after start-up: each stone's turn, place and sides, every frame; and, only when the
+  // shell cracks or mends, which piece of it carries each cell. A cell's own shape is never written again.
+  assert.equal((renderer.match(/gl\.bufferSubData\(/g) || []).length, 2);
+  assert.equal((renderer.match(/gl\.DYNAMIC_DRAW/g) || []).length, 2);
+  assert.match(renderer, /if \(shell\.changed !== carriedAt\) \{/);
+  assert.match(renderer, /buffer\(gl\.ARRAY_BUFFER, slab\.corners, gl\.STATIC_DRAW\)/);
+  assert.match(renderer, /buffer\(gl\.ARRAY_BUFFER, cells\.spans, gl\.STATIC_DRAW\)/);
   // Three maps, all made from numbers at start-up: the rock, the rock's relief, and the mortar as the layout presses it.
   assert.match(renderer, /const rock = createRock\(ROCK_SIZE\);/);
   assert.match(renderer, /map\(0, ROCK_SIZE, ROCK_SIZE, rock, true\);/);

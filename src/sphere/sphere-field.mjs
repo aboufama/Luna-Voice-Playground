@@ -27,6 +27,9 @@ const JOINT = .7;
 // One stone in fifteen or so has been lost, in patches as wear goes, and seldom from the gilded lines.
 const LOST = .078;
 const LOST_GILDED = .12;
+// A document handed to the sphere arrives as a small sheet of this many stones, this many to a row,
+// each this far across, cut from one pale stone. They are not part of the sphere until it swallows them.
+export const SHEET = 9, SHEET_ROW = 3, SHEET_STONE = 7.4;
 // The mineral a tile is cut from, as in the flat medallion's stone atlas.
 const MINERALS = { warm: [72, 65, 55], pale: [92, 88, 79], dark: [48, 47, 43] };
 // The flat stones are drawn as ink over a white page; a solid tile carries that lightening in its body.
@@ -192,7 +195,7 @@ export function createSphereField() {
   const point = new Float64Array(3);
   let slot = 0;
 
-  function tile(course, polar, tilt) {
+  function tile(course, polar, tilt, round) {
     const id = slot++;
     // The centre is the middle of the four corners, pushed back onto the sphere.
     const centre = [0, 0, 0], placed = polar.map(([arc, theta]) => [...onSphere(arc, theta, point)]);
@@ -221,13 +224,14 @@ export function createSphereField() {
     if (area < 0) blank = blank.reverse();
     const outline = polarStone ? handCut(blank, id, -9, 9) : handCut(blank, id, boundary(course - 1) - arc + KEEP, boundary(course) - arc - KEEP);
     // Every place has its socket in the mortar, whether or not its stone is still there.
-    sockets.push({ normal, south, outline });
+    // `round` is the stretch of its ring the place takes up: the mortar is cut along the same lines.
+    sockets.push({ normal, south, outline, course, round, stone: gone ? -1 : tiles.length });
     if (gone) { lost.push(arc, bearing); return; }
     // No stone sits true: each leans a few degrees and stands a hair proud or shy, which is why they catch the light one by one.
     const lean = quatMul(quatAxis(1, 0, 0, (hash(seed, 61) - .5) * .13), quatAxis(0, 1, 0, (hash(seed, 63) - .5) * .13));
     const variant = hash(seed, 18), mineral = variant < .14 ? MINERALS.warm : variant > .84 ? MINERALS.pale : MINERALS.dark;
     tiles.push({
-      course, place, arc, theta: bearing, seed, normal, south, outline, motif, gilded: pigments.gilded,
+      course, place, socket: sockets.length - 1, arc, theta: bearing, seed, normal, south, outline, motif, gilded: pigments.gilded,
       frame: quatMul(quatFromFrame(east, south, normal), lean),
       seat: polarStone ? 0 : (hash(seed, 65) - .5) * .5,
       height: 1 + (hash(seed, 67) - .5) * .24,
@@ -244,7 +248,7 @@ export function createSphereField() {
 
   // The medallion's own centre stone, and its twin at the far pole.
   const centreStone = [[-1.8, -1.7], [1.75, -1.9], [1.9, 1.75], [-1.7, 1.9]].map(([x, y]) => [Math.hypot(x, y) * SCALE, Math.atan2(y, x)]);
-  tile(0, centreStone, 0);
+  tile(0, centreStone, 0, [0, TAU]);
   for (let ring = 0; ring < RINGS; ring++) {
     const centreArc = CENTRE + (ring + .5) * PITCH;
     // The sphere narrows away from its widest ring, so a course holds fewer stones than it would lying flat.
@@ -263,11 +267,20 @@ export function createSphereField() {
         [boundary(ring) + JOINT / 2, right - skew],
         [boundary(ring + 1) - JOINT / 2, right + skew],
         [boundary(ring + 1) - JOINT / 2, left + skew],
-      ], turned);
+      ], turned, [theta % TAU, theta % TAU + width]);
       theta += width;
     }
   }
-  tile(RINGS + 1, centreStone.map(([arc, theta]) => [Math.PI * RADIUS - arc, theta]), 0);
+  tile(RINGS + 1, centreStone.map(([arc, theta]) => [Math.PI * RADIUS - arc, theta]), 0, [0, TAU]);
+
+  // The sheet a document arrives as: square stones cut by the same hand.
+  const half = SHEET_STONE / 2, sheet = Array.from({ length: SHEET }, (_, index) => {
+    const seed = noise(index + 90001);
+    return {
+      outline: handCut([[-half, -half], [half, -half], [half, half], [-half, half]], 70000 + index, -half, half),
+      height: 1 + (hash(seed, 67) - .5) * .2, rock: [hash(seed, 71), hash(seed, 73), hash(seed, 75) * TAU],
+    };
+  });
 
   const count = tiles.length;
   const field = {
@@ -278,12 +291,18 @@ export function createSphereField() {
     places,
     // Where each ring begins and ends, as distance from the front pole: COURSES + 1 edges.
     courseEdge: Float32Array.from({ length: COURSES + 1 }, (_, edge) => edge === 0 ? 0 : edge === COURSES ? Math.PI * RADIUS : boundary(edge - 1)),
-    // Every place's socket, taken or empty: where it is, which way is south there, and the outline pressed into the mortar.
-    sockets: { count: sockets.length, normal: Float32Array.from(sockets.flatMap(socket => socket.normal)), south: Float32Array.from(sockets.flatMap(socket => socket.south)), outline: Float32Array.from(sockets.flatMap(socket => socket.outline.flat())) },
+    // Every place's socket, taken or empty: where it is, which way is south there, and the outline pressed into the mortar;
+    // which ring it is on, the stretch of that ring it takes up (from, to), and which stone sits in it (-1 if it is lost).
+    sockets: {
+      count: sockets.length, normal: Float32Array.from(sockets.flatMap(socket => socket.normal)), south: Float32Array.from(sockets.flatMap(socket => socket.south)), outline: Float32Array.from(sockets.flatMap(socket => socket.outline.flat())),
+      course: Uint8Array.from(sockets, socket => socket.course), round: Float32Array.from(sockets.flatMap(socket => socket.round)), stone: Int16Array.from(sockets, socket => socket.stone),
+    },
+    // The stones of a document's sheet: their outlines, thicknesses and pieces of rock, like any other stone's.
+    sheet: { count: SHEET, outline: Float32Array.from(sheet.flatMap(stone => stone.outline.flat())), height: Float32Array.from(sheet, stone => stone.height), rock: Float32Array.from(sheet.flatMap(stone => stone.rock)) },
     // How far along the surface each course lies from the pole facing the viewer.
     courseArc: Float32Array.from({ length: COURSES }, (_, course) => course === 0 ? 0 : course === COURSES - 1 ? Math.PI * RADIUS : CENTRE + (course - .5) * PITCH),
-    // Which ring each stone is in, and which place round that ring is its own.
-    course: new Uint8Array(count), place: new Uint16Array(count), arc: new Float32Array(count), theta: new Float32Array(count),
+    // Which ring each stone is in, which place round that ring is its own, and which socket that is.
+    course: new Uint8Array(count), place: new Uint16Array(count), socket: Uint16Array.from(tiles, stone => stone.socket), arc: new Float32Array(count), theta: new Float32Array(count),
     seed: new Float64Array(count), motif: new Float32Array(count), gilded: new Uint8Array(count),
     span: new Float32Array(count), reach: new Float32Array(count), height: new Float32Array(count), seat: new Float32Array(count), rock: new Float32Array(count * 3),
     normal: new Float32Array(count * 3), south: new Float32Array(count * 3), frame: new Float32Array(count * 4),

@@ -1,8 +1,8 @@
 // One tessera: a hand-cut stone, twelve-sided, with a face on each side and a
 // rounded shoulder falling from each face to the stone's widest outline. Every
 // stone on the sphere is this same piece drawn from its own twelve points, so
-// the shape below is the only shape there is. The mortar is a stack of rigid
-// rings, one to a course, which together make a sphere.
+// the shape below is the only shape there is. The mortar is a shell of rigid
+// cells, one to a place, which together make a hollow sphere.
 
 export const SIDES = 12;
 export const PROFILE = {
@@ -51,24 +51,69 @@ export function tilePoint(outline, thickness, side, ring, out = new Float64Array
   return out;
 }
 
+// The mortar is a shell this thick under its surface, cut into cells: one to a
+// place, each a curved slab with a top, an underside and four cut sides. A ring is
+// the cells of one course, and turns as one. A cell can also be carried off as a
+// rigid piece, with the stone set in it, when the shell cracks open.
+export const SHELL = 4.6;
+export const CELL_SEGMENTS = 4;
+// Which way a face of a cell looks: out, in, towards the pole facing the viewer, away from it, and back and on round its ring.
+export const CELL_FACE = { top: 0, under: 1, north: 2, south: 3, west: 4, east: 5 };
+
 /**
- * The mortar: one band of the unit sphere for every ring, each with its own
- * points so that a ring can turn without its neighbours. `edges` are the
- * polar angles where the rings begin and end, from the pole facing the viewer
- * to the far one. A point is [x, y, z, which ring].
+ * The one piece every cell is drawn from. A corner is [how far round its
+ * stretch of the ring (0 to 1), how far across the ring (0 to 1), how deep (0 at
+ * the surface, 1 at the underside), which face it belongs to].
  */
-export function createBedMesh(edges, segments = 120) {
-  const points = [], indices = [];
-  for (let ring = 0; ring + 1 < edges.length; ring++) {
-    const first = points.length / 4;
-    for (const polar of [edges[ring], edges[ring + 1]]) for (let segment = 0; segment <= segments; segment++) {
-      const around = segment / segments * Math.PI * 2;
-      points.push(Math.sin(polar) * Math.cos(around), Math.sin(polar) * Math.sin(around), Math.cos(polar), ring);
-    }
-    for (let segment = 0; segment < segments; segment++) {
-      const a = first + segment, b = a + segments + 1;
-      indices.push(a, b, b + 1, a, b + 1, a + 1);
+export function createCellTemplate(segments = CELL_SEGMENTS) {
+  const corners = [], indices = [];
+  const corner = (round, across, deep, face) => corners.push(round, across, deep, face) / 4 - 1;
+  const quad = (a, b, c, d) => indices.push(a, b, c, a, c, d);
+  for (let step = 0; step < segments; step++) {
+    const from = step / segments, to = (step + 1) / segments;
+    // Seen from outside, round a face: on round the ring, then across it.
+    quad(corner(from, 0, 0, CELL_FACE.top), corner(to, 0, 0, CELL_FACE.top), corner(to, 1, 0, CELL_FACE.top), corner(from, 1, 0, CELL_FACE.top));
+    quad(corner(from, 0, 1, CELL_FACE.under), corner(from, 1, 1, CELL_FACE.under), corner(to, 1, 1, CELL_FACE.under), corner(to, 0, 1, CELL_FACE.under));
+    quad(corner(from, 0, 0, CELL_FACE.north), corner(from, 0, 1, CELL_FACE.north), corner(to, 0, 1, CELL_FACE.north), corner(to, 0, 0, CELL_FACE.north));
+    quad(corner(from, 1, 0, CELL_FACE.south), corner(to, 1, 0, CELL_FACE.south), corner(to, 1, 1, CELL_FACE.south), corner(from, 1, 1, CELL_FACE.south));
+  }
+  quad(corner(0, 0, 0, CELL_FACE.west), corner(0, 1, 0, CELL_FACE.west), corner(0, 1, 1, CELL_FACE.west), corner(0, 0, 1, CELL_FACE.west));
+  quad(corner(1, 0, 0, CELL_FACE.east), corner(1, 0, 1, CELL_FACE.east), corner(1, 1, 1, CELL_FACE.east), corner(1, 1, 0, CELL_FACE.east));
+  return { corners: new Float32Array(corners), indices: new Uint8Array(indices), cornerCount: corners.length / 4, indexCount: indices.length };
+}
+
+/**
+ * A corner of one cell on the sphere of radius 1, before its ring turns or
+ * anything carries it: exactly what the mortar's vertex shader computes.
+ * `span` is the cell's [polar from, polar to, round from, round to]. Returns
+ * the point (scaled to its depth by `radius` and `shell`) and the way its face looks.
+ */
+export function cellPoint(span, corner, radius, shell = SHELL) {
+  const polar = span[0] + (span[1] - span[0]) * corner[1], round = span[2] + (span[3] - span[2]) * corner[0];
+  const out = [Math.sin(polar) * Math.cos(round), -Math.sin(polar) * Math.sin(round), Math.cos(polar)];
+  const east = [-Math.sin(round), -Math.cos(round), 0], south = [Math.cos(polar) * Math.cos(round), -Math.cos(polar) * Math.sin(round), -Math.sin(polar)];
+  const face = [out, out.map(part => -part), south.map(part => -part), south, east.map(part => -part), east][corner[3]];
+  const reach = radius - shell * corner[2];
+  return { point: out.map(part => part * reach), face };
+}
+
+/**
+ * The cells the mortar is cut into: one to every socket, and the cap round each
+ * pole cut again along its neighbouring ring's places, so that its edge meets
+ * theirs. `edges` are the polar angles where the rings begin and end. Each
+ * cell is [polar from, polar to, round from, round to]; `socket` says which
+ * socket each belongs to, and `ring` which ring turns it.
+ */
+export function createCells(field, edges) {
+  const spans = [], socket = [], ring = [], { sockets, courses } = field;
+  const neighbours = course => { const found = []; for (let index = 0; index < sockets.count; index++) if (sockets.course[index] === course) found.push(index); return found; };
+  for (let index = 0; index < sockets.count; index++) {
+    const course = sockets.course[index];
+    const cuts = course === 0 ? neighbours(1) : course === courses - 1 ? neighbours(courses - 2) : [index];
+    for (const cut of cuts) {
+      spans.push(edges[course], edges[course + 1], sockets.round[cut * 2], sockets.round[cut * 2 + 1]);
+      socket.push(index); ring.push(course);
     }
   }
-  return { points: new Float32Array(points), indices: new Uint16Array(indices) };
+  return { count: socket.length, spans: new Float32Array(spans), socket: new Uint16Array(socket), ring: new Float32Array(ring) };
 }

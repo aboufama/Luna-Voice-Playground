@@ -1,27 +1,30 @@
 import { RADIUS, COURSES } from './sphere-field.mjs';
-import { PROFILE, MORTAR, SIDES, createTileTemplate, createBedMesh } from './sphere-mesh.mjs';
+import { PROFILE, MORTAR, SIDES, SHELL, createTileTemplate, createCellTemplate, createCells } from './sphere-mesh.mjs';
 import { ROCK_SIZE, ROCK_DENSITY, createRock, createRelief } from './sphere-rock.mjs';
 import { MORTAR_WIDTH, MORTAR_HEIGHT, createMortarMap } from './sphere-mortar.mjs';
-import { STRIDE, TURN, PLACE, FACES } from './sphere-motion.mjs';
+import { STRIDE, TURN, PLACE, FACES, CELL_STRIDE } from './sphere-motion.mjs';
 
 const number = value => value.toFixed(4);
 // The mortar's surface: a little above the middle of the stones, well below their faces.
 export const BED_RADIUS = RADIUS + MORTAR;
 // The light's own view of the sphere, for its depth pass: this many pixels across, at this many texels.
-const LIGHT_REACH = RADIUS + 14;
+// It reaches far enough out to see a piece of the shell standing open.
+const LIGHT_REACH = RADIUS + 56;
 export const SHADOW_SIZE = 1024;
 
 // Where a point lands: through the one fixed lens, or, in the light's depth pass, straight along the light.
 const SHARED = `
 uniform mat3 uSway;
-uniform vec4 uLens;
+uniform vec2 uZoom;
+uniform vec3 uLens;
 uniform vec2 uNudge;
 uniform mat3 uLight;
 uniform float uPass;
+vec3 turn(vec4 q, vec3 v) { return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v); }
 vec4 project(vec3 seen) {
   if (uPass > 0.5) { vec3 from = uLight * seen; return vec4(from.xy, -from.z, 1.0); }
-  float depth = uLens.y - seen.z;
-  return vec4(seen.xy * uLens.x + uNudge * depth, uLens.w - uLens.z * depth, depth);
+  float depth = uLens.x - seen.z;
+  return vec4(seen.xy * uZoom + uNudge * depth, uLens.z - uLens.y * depth, depth);
 }`;
 // One light for stones and mortar alike, from above and to the left of the viewer: soft sky, a
 // directional key, and the key cut off wherever something stands between the surface and the light.
@@ -80,8 +83,8 @@ vec2 outline(int side) {
   vec4 pair = side < 2 ? aOutlineA : side < 4 ? aOutlineB : side < 6 ? aOutlineC : side < 8 ? aOutlineD : side < 10 ? aOutlineE : aOutlineF;
   return (side & 1) == 0 ? pair.xy : pair.zw;
 }
-vec3 turn(vec4 q, vec3 v) { return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v); }
-vec4 side(float which) { return which < 0.5 ? aMineral : which < 1.5 ? aCool : which < 2.5 ? aBright : aWarm; }
+// The stone of a document's page is one pale stone, the same for every block, a shade lighter or darker by its cut.
+vec4 side(float which) { return which < 0.5 ? aMineral : which < 1.5 ? aCool : which < 2.5 ? aBright : which < 3.5 ? aWarm : vec4(vec3(0.900, 0.880, 0.830) * (0.95 + 0.09 * aRock.x), 5.0 / 255.0); }
 
 void main() {
   int at = int(aVertex.x), ring = int(aVertex.y);
@@ -140,18 +143,19 @@ uniform sampler2D uRelief;
 ${LIGHT}
 out vec4 colour;
 
-// What each kind of stone is made of. The kinds, in order: limestone or basalt, lapis, marble, green stone, terracotta.
+// What each kind of stone is made of. The kinds, in order: limestone or basalt, lapis, marble, green stone, terracotta,
+// and the white marble of a document's page.
 // How far its clouds lighten and darken it, and how coarse its grain is;
-const float CLOUDED[5] = float[5](0.24, 0.42, 0.20, 0.50, 0.14);
-const float GRAINED[5] = float[5](0.30, 0.26, 0.18, 0.24, 0.34);
+const float CLOUDED[6] = float[6](0.24, 0.42, 0.20, 0.50, 0.14, 0.12);
+const float GRAINED[6] = float[6](0.30, 0.26, 0.18, 0.24, 0.34, 0.12);
 // how rough its split surface is;
-const float ROUGH[5] = float[5](1.25, 0.95, 0.75, 0.95, 1.45);
+const float ROUGH[6] = float[6](1.25, 0.95, 0.75, 0.95, 1.45, 0.70);
 // what its paler patches are (calcite in lapis, cream in marble) and how much of them there is;
-const vec4 PATCH[5] = vec4[5](vec4(0.74, 0.72, 0.68, 0.22), vec4(0.70, 0.74, 0.80, 0.36), vec4(0.93, 0.87, 0.72, 0.30), vec4(0.74, 0.84, 0.76, 0.30), vec4(0.86, 0.66, 0.50, 0.20));
+const vec4 PATCH[6] = vec4[6](vec4(0.74, 0.72, 0.68, 0.22), vec4(0.70, 0.74, 0.80, 0.36), vec4(0.93, 0.87, 0.72, 0.30), vec4(0.74, 0.84, 0.76, 0.30), vec4(0.86, 0.66, 0.50, 0.20), vec4(0.97, 0.96, 0.93, 0.34));
 // its veins;
-const vec4 VEIN[5] = vec4[5](vec4(0.82, 0.80, 0.76, 0.34), vec4(0.86, 0.88, 0.90, 0.50), vec4(0.60, 0.36, 0.22, 0.40), vec4(0.84, 0.90, 0.86, 0.36), vec4(0.90, 0.80, 0.66, 0.12));
+const vec4 VEIN[6] = vec4[6](vec4(0.82, 0.80, 0.76, 0.34), vec4(0.86, 0.88, 0.90, 0.50), vec4(0.60, 0.36, 0.22, 0.40), vec4(0.84, 0.90, 0.86, 0.36), vec4(0.90, 0.80, 0.66, 0.12), vec4(0.58, 0.60, 0.64, 0.42));
 // and its flecks: pits in limestone, pyrite in lapis, dark crystals in green stone, pale grit in terracotta.
-const vec4 FLECK[5] = vec4[5](vec4(0.26, 0.25, 0.23, 0.24), vec4(0.76, 0.64, 0.36, 0.62), vec4(0.66, 0.42, 0.24, 0.26), vec4(0.12, 0.26, 0.24, 0.40), vec4(0.92, 0.86, 0.74, 0.50));
+const vec4 FLECK[6] = vec4[6](vec4(0.26, 0.25, 0.23, 0.24), vec4(0.76, 0.64, 0.36, 0.62), vec4(0.66, 0.42, 0.24, 0.26), vec4(0.12, 0.26, 0.24, 0.40), vec4(0.92, 0.86, 0.74, 0.50), vec4(0.74, 0.72, 0.68, 0.16));
 
 void main() {
   if (uPass > 0.5) { colour = vec4(0.0); return; }
@@ -183,48 +187,79 @@ void main() {
   colour = vec4(lit(body, normal, shade, sunlit(vSeen, normalize(vNormal))), 1.0);
 }`;
 
-// The mortar is a stack of rings, one to a course, each turning only with its own
-// course and with the sphere. Its relief is its own: the sockets, squeezed joints
-// and parting lines made from the layout, and sand read in the mortar's own coordinates.
+// The mortar is a shell of cells, one to a place: a top, an underside and four cut
+// sides. A cell turns with its ring and with the sphere, and when the shell cracks
+// open it is carried off as a rigid piece with the stone set in it. Its relief is
+// its own: the sockets, squeezed joints and parting lines made from the layout,
+// and sand read in the mortar's own coordinates.
 export const BED_VERTEX_SHADER = `#version 300 es
 precision highp float;
-layout(location = 0) in vec4 aPoint;
+layout(location = 0) in vec4 aCorner;
+layout(location = 1) in vec4 aSpan;
+layout(location = 2) in float aRing;
+layout(location = 3) in vec4 aHinge;
+layout(location = 4) in vec4 aShift;
 uniform float uDial[${COURSES}];
 ${SHARED}
 out vec3 vPoint;
 out vec3 vSeen;
+out vec3 vAway;
 flat out vec2 vDial;
+flat out vec4 vHinge;
+flat out float vFace;
 void main() {
-  // The ring's own turn about the axis through the poles, then the sphere's.
-  float dial = uDial[int(aPoint.w)];
+  // The cell's own fixed shape: where this corner is on its stretch of its ring, and how deep in the shell.
+  float polar = mix(aSpan.x, aSpan.y, aCorner.y), round = mix(aSpan.z, aSpan.w, aCorner.x);
+  vec3 point = vec3(sin(polar) * cos(round), -sin(polar) * sin(round), cos(polar));
+  vec3 east = vec3(-sin(round), -cos(round), 0.0), south = vec3(cos(polar) * cos(round), -cos(polar) * sin(round), -sin(polar));
+  int face = int(aCorner.w);
+  vec3 away = face == 0 ? point : face == 1 ? -point : face == 2 ? -south : face == 3 ? south : face == 4 ? -east : east;
+  // The ring's own turn about the axis through the poles, then the piece of shell it belongs to, then the sphere's.
+  float dial = uDial[int(aRing)];
   vDial = vec2(cos(dial), sin(dial));
-  vec3 turned = vec3(aPoint.x * vDial.x - aPoint.y * vDial.y, aPoint.x * vDial.y + aPoint.y * vDial.x, aPoint.z);
-  vPoint = aPoint.xyz;
-  vSeen = uSway * (turned * ${number(BED_RADIUS)});
+  vec3 turned = vec3(point.x * vDial.x - point.y * vDial.y, point.x * vDial.y + point.y * vDial.x, point.z) * (${number(BED_RADIUS)} - ${number(SHELL)} * aCorner.z);
+  vec3 placed = turn(aHinge, turned) + aShift.xyz;
+  vPoint = point;
+  vHinge = aHinge;
+  vFace = aCorner.w;
+  vAway = uSway * turn(aHinge, vec3(away.x * vDial.x - away.y * vDial.y, away.x * vDial.y + away.y * vDial.x, away.z));
+  vSeen = uSway * placed;
   gl_Position = project(vSeen);
 }`;
 export const BED_FRAGMENT_SHADER = `#version 300 es
 precision highp float;
 in vec3 vPoint;
 in vec3 vSeen;
+in vec3 vAway;
 flat in vec2 vDial;
+flat in vec4 vHinge;
+flat in float vFace;
 uniform mat3 uSway;
 uniform sampler2D uRock;
 uniform sampler2D uRelief;
 uniform sampler2D uMortar;
+vec3 turn(vec4 q, vec3 v) { return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v); }
 ${LIGHT}
 out vec4 colour;
 void main() {
   if (uPass > 0.5) { colour = vec4(0.0); return; }
   vec3 point = normalize(vPoint);
-  float girth = max(length(point.xy), 0.0001), bearing = atan(-point.y, point.x);
-  // The layout's relief: where on this ring's own band of mortar this is.
-  vec4 laid = texture(uMortar, vec2(bearing / 6.2831853 + (bearing < 0.0 ? 1.0 : 0.0), acos(clamp(point.z, -1.0, 1.0)) / 3.14159265));
   // Sand: read on three sides and averaged, so the grain never stretches.
   vec3 weight = pow(abs(point), vec3(4.0));
   vec3 at = point * ${number(BED_RADIUS * ROCK_DENSITY / ROCK_SIZE)};
   vec4 rock = (texture(uRock, at.yz) * weight.x + texture(uRock, at.zx) * weight.y + texture(uRock, at.xy) * weight.z) / (weight.x + weight.y + weight.z);
   vec4 sand = (texture(uRelief, at.yz) * weight.x + texture(uRelief, at.zx) * weight.y + texture(uRelief, at.xy) * weight.z) / (weight.x + weight.y + weight.z);
+  if (vFace > 0.5) {
+    // A cut side or the underside of the shell: bare mortar. Inside the sphere hardly any sky reaches it.
+    vec3 bare = vec3(0.66, 0.63, 0.57) * (1.0 + (rock.r - 0.5) * 0.24 + (rock.g - 0.5) * 0.40);
+    float open = vFace < 1.5 ? 0.16 : 0.62;
+    vec3 away = normalize(vAway);
+    colour = vec4(lit(bare, away, open * (0.8 + 0.4 * sand.a), sunlit(vSeen, away)), 1.0);
+    return;
+  }
+  float girth = max(length(point.xy), 0.0001), bearing = atan(-point.y, point.x);
+  // The layout's relief: where on this ring's own band of mortar this is.
+  vec4 laid = texture(uMortar, vec2(bearing / 6.2831853 + (bearing < 0.0 ? 1.0 : 0.0), acos(clamp(point.z, -1.0, 1.0)) / 3.14159265));
   // The map is pinched to a point at each pole, so its slopes count for nothing there.
   float mapped = smoothstep(0.012, 0.05, girth);
   float sunk = clamp((0.6 - laid.b) * 3.6, 0.0, 1.0) * mapped;
@@ -236,8 +271,8 @@ void main() {
   vec3 east = vec3(point.y, -point.x, 0.0) / girth, south = vec3(point.z * point.x / girth, point.z * point.y / girth, -girth);
   vec2 slope = (laid.xy - 0.5) * 2.55 * mapped + (sand.xy - 0.5) * 1.5 * (1.0 - 0.6 * sunk);
   vec3 ringNormal = normalize(point + east * slope.x + south * slope.y);
-  vec3 normal = uSway * vec3(ringNormal.x * vDial.x - ringNormal.y * vDial.y, ringNormal.x * vDial.y + ringNormal.y * vDial.x, ringNormal.z);
-  vec3 surface = uSway * vec3(point.x * vDial.x - point.y * vDial.y, point.x * vDial.y + point.y * vDial.x, point.z);
+  vec3 normal = uSway * turn(vHinge, vec3(ringNormal.x * vDial.x - ringNormal.y * vDial.y, ringNormal.x * vDial.y + ringNormal.y * vDial.x, ringNormal.z));
+  vec3 surface = uSway * turn(vHinge, vec3(point.x * vDial.x - point.y * vDial.y, point.x * vDial.y + point.y * vDial.x, point.z));
   // Shade gathers in the joints and the sockets.
   float shade = mix(1.0, mix(0.66, 1.06, smoothstep(0.3, 0.8, laid.b)), mapped) * (0.8 + 0.4 * sand.a);
   colour = vec4(lit(mortar, normal, shade, sunlit(vSeen, surface)), 1.0);
@@ -248,7 +283,7 @@ const KEY_LIGHT = [-.5, .58, .64];
 
 /**
  * Draws the sphere into `canvas`. Each frame has two passes over the same two
- * real objects, the mortar rings and the stones: first the light's own depth
+ * real objects, the mortar's cells and the stones: first the light's own depth
  * view of them, into a depth map, then the picture, in which that map says
  * what the light reaches. Nothing is drawn after the picture. Throws if WebGL2
  * is unavailable, so the caller can fall back to the flat medallion.
@@ -256,7 +291,9 @@ const KEY_LIGHT = [-.5, .58, .64];
 export function createSphereRenderer(canvas, field) {
   const gl = canvas.getContext('webgl2', { alpha: true, antialias: true, depth: true, stencil: false, premultipliedAlpha: true });
   if (!gl) throw new Error('WebGL2 is unavailable');
-  const template = createTileTemplate(), bed = createBedMesh(Array.from(field.courseEdge, edge => edge / RADIUS));
+  const template = createTileTemplate(), slab = createCellTemplate(), cells = createCells(field, Array.from(field.courseEdge, edge => edge / RADIUS));
+  // Every stone of the sphere, and after them the stones of a document's sheet.
+  const blocks = field.count + field.sheet.count;
   const buffers = [], programs = [], arrays = [], textures = [];
   const length = Math.hypot(...KEY_LIGHT), key = KEY_LIGHT.map(part => part / length);
   // The light's own axes: across, up and towards it, each scaled so the sphere fills its view.
@@ -280,7 +317,7 @@ export function createSphereRenderer(canvas, field) {
     gl.uniformMatrix3fv(at('uLight'), false, lightView);
     ['uRock', 'uRelief', 'uMortar', 'uShadow'].forEach((name, unit) => gl.uniform1i(at(name), unit));
     programs.push(made);
-    return { made, sway: at('uSway'), lens: at('uLens'), nudge: at('uNudge'), pass: at('uPass'), dial: at('uDial') };
+    return { made, sway: at('uSway'), zoom: at('uZoom'), lens: at('uLens'), nudge: at('uNudge'), pass: at('uPass'), dial: at('uDial') };
   }
   function array() { const made = gl.createVertexArray(); gl.bindVertexArray(made); arrays.push(made); return made; }
   function buffer(target, data, usage) {
@@ -329,11 +366,21 @@ export function createSphereRenderer(canvas, field) {
   gl.drawBuffers([gl.NONE]);
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
-  // The mortar rings. Written once, never touched again.
+  // The mortar's cells: one piece, and where each cell lies. Written once, never touched again.
   const mortar = program(BED_VERTEX_SHADER, BED_FRAGMENT_SHADER), bedArray = array();
-  buffer(gl.ARRAY_BUFFER, bed.points, gl.STATIC_DRAW);
+  buffer(gl.ARRAY_BUFFER, slab.corners, gl.STATIC_DRAW);
   attribute(0, 4, gl.FLOAT, false, 0, 0, false);
-  buffer(gl.ELEMENT_ARRAY_BUFFER, bed.indices, gl.STATIC_DRAW);
+  buffer(gl.ELEMENT_ARRAY_BUFFER, slab.indices, gl.STATIC_DRAW);
+  buffer(gl.ARRAY_BUFFER, cells.spans, gl.STATIC_DRAW);
+  attribute(1, 4, gl.FLOAT, false, 0, 0, true);
+  buffer(gl.ARRAY_BUFFER, cells.ring, gl.STATIC_DRAW);
+  attribute(2, 1, gl.FLOAT, false, 0, 0, true);
+  // Which piece of the shell each cell is carried by, when the shell cracks open: written only when that changes.
+  const carried = new Float32Array(cells.count * CELL_STRIDE);
+  const hinges = buffer(gl.ARRAY_BUFFER, carried.byteLength, gl.DYNAMIC_DRAW);
+  attribute(3, 4, gl.FLOAT, false, CELL_STRIDE * 4, 0, true);
+  attribute(4, 4, gl.FLOAT, false, CELL_STRIDE * 4, 16, true);
+  let carriedAt = -1;
 
   // The one piece every stone is drawn from.
   const stones = program(VERTEX_SHADER, FRAGMENT_SHADER), stoneArray = array();
@@ -342,20 +389,22 @@ export function createSphereRenderer(canvas, field) {
   buffer(gl.ELEMENT_ARRAY_BUFFER, template.indices, gl.STATIC_DRAW);
 
   // Each stone's cut, thickness and piece of rock: written once, never touched again.
-  const CUT = SIDES * 2 + 5, cuts = new Float32Array(field.count * CUT);
-  for (let index = 0; index < field.count; index++) {
-    const at = index * CUT, turned = field.rock[index * 3 + 2];
-    cuts.set(field.outline.subarray(index * SIDES * 2, (index + 1) * SIDES * 2), at);
-    cuts[at + SIDES * 2] = field.height[index];
-    cuts.set([field.rock[index * 3], field.rock[index * 3 + 1], Math.cos(turned), Math.sin(turned)], at + SIDES * 2 + 1);
+  const CUT = SIDES * 2 + 5, cuts = new Float32Array(blocks * CUT);
+  for (let index = 0; index < blocks; index++) {
+    const own = index < field.count ? field : field.sheet, which = index < field.count ? index : index - field.count;
+    const at = index * CUT, turned = own.rock[which * 3 + 2];
+    cuts.set(own.outline.subarray(which * SIDES * 2, (which + 1) * SIDES * 2), at);
+    cuts[at + SIDES * 2] = own.height[which];
+    cuts.set([own.rock[which * 3], own.rock[which * 3 + 1], Math.cos(turned), Math.sin(turned)], at + SIDES * 2 + 1);
   }
   buffer(gl.ARRAY_BUFFER, cuts, gl.STATIC_DRAW);
   for (let pair = 0; pair < SIDES / 2; pair++) attribute(1 + pair, 4, gl.FLOAT, false, CUT * 4, pair * 16, true);
   attribute(7, 1, gl.FLOAT, false, CUT * 4, SIDES * 8, true);
   attribute(15, 4, gl.FLOAT, false, CUT * 4, SIDES * 8 + 4, true);
 
-  // The four stones a block can show, each a colour and a kind of stone, likewise fixed.
-  const pigments = new Uint8Array(field.count * 16);
+  // The four stones a block of the sphere can show, each a colour and a kind of stone, likewise fixed.
+  // (A sheet's stones show only the page, which the shader holds itself.)
+  const pigments = new Uint8Array(blocks * 16);
   for (let index = 0; index < field.count; index++) {
     [field.mineral, field.cool, field.bright, field.warm].forEach((material, layer) => pigments.set(material.subarray(index * 4, index * 4 + 4), index * 16 + layer * 4));
   }
@@ -363,7 +412,7 @@ export function createSphereRenderer(canvas, field) {
   for (let layer = 0; layer < 4; layer++) attribute(8 + layer, 4, gl.UNSIGNED_BYTE, true, 16, layer * 4, true);
 
   // Where every stone is this frame: the only buffer written again.
-  const motion = buffer(gl.ARRAY_BUFFER, field.count * STRIDE * 4, gl.DYNAMIC_DRAW);
+  const motion = buffer(gl.ARRAY_BUFFER, blocks * STRIDE * 4, gl.DYNAMIC_DRAW);
   attribute(12, 4, gl.FLOAT, false, STRIDE * 4, TURN * 4, true);
   attribute(13, 4, gl.FLOAT, false, STRIDE * 4, PLACE * 4, true);
   attribute(14, 4, gl.FLOAT, false, STRIDE * 4, FACES * 4, true);
@@ -372,29 +421,37 @@ export function createSphereRenderer(canvas, field) {
   gl.enable(gl.DEPTH_TEST);
   gl.enable(gl.CULL_FACE);
   gl.clearColor(0, 0, 0, 0);
-  let pixels = canvas.width;
+  let wide = canvas.width, tall = canvas.height;
 
   // The two real objects, as seen through the lens or along the light.
-  function scene(pass, turned, dial, lens, nudgeX, nudgeY) {
+  function scene(pass, turned, dial, lens, view) {
     for (const [target, vertices] of [[mortar, bedArray], [stones, stoneArray]]) {
       gl.useProgram(target.made);
       gl.uniform1f(target.pass, pass);
       gl.uniformMatrix3fv(target.sway, false, turned);
-      gl.uniform4f(target.lens, lens.zoom, lens.distance, lens.depthScale, lens.depthOffset);
-      gl.uniform2f(target.nudge, nudgeX, nudgeY);
+      gl.uniform2f(target.zoom, view.zoomX, view.zoomY);
+      gl.uniform3f(target.lens, lens.distance, lens.depthScale, lens.depthOffset);
+      gl.uniform2f(target.nudge, view.nudgeX, view.nudgeY);
       gl.bindVertexArray(vertices);
-      if (target === mortar) { gl.uniform1fv(target.dial, dial); gl.drawElements(gl.TRIANGLES, bed.indices.length, gl.UNSIGNED_SHORT, 0); }
-      else gl.drawElementsInstanced(gl.TRIANGLES, template.indexCount, gl.UNSIGNED_BYTE, 0, field.count);
+      if (target === mortar) { gl.uniform1fv(target.dial, dial); gl.drawElementsInstanced(gl.TRIANGLES, slab.indexCount, gl.UNSIGNED_BYTE, 0, cells.count); }
+      else gl.drawElementsInstanced(gl.TRIANGLES, template.indexCount, gl.UNSIGNED_BYTE, 0, blocks);
     }
   }
   return {
     lost: () => gl.isContextLost(),
-    resize(size) {
-      if (canvas.width !== size || canvas.height !== size) { canvas.width = size; canvas.height = size; }
-      pixels = size;
+    resize(width, height) {
+      if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
+      wide = width; tall = height;
     },
-    // `tiles`, `turned` and `dial` come straight from the motion; `lens` and the nudge place the fixed camera.
-    draw(tiles, turned, dial, lens, nudgeX = 0, nudgeY = 0) {
+    // `tiles`, `turned`, `dial` and `shell` come straight from the motion; `lens` and `view` place the fixed camera
+    // on the canvas. `shell` is { carried, changed }: every socket's piece of the shell, and a count of the times that changed.
+    draw(tiles, turned, dial, shell, lens, view) {
+      if (shell.changed !== carriedAt) {
+        carriedAt = shell.changed;
+        for (let cell = 0; cell < cells.count; cell++) carried.set(shell.carried.subarray(cells.socket[cell] * CELL_STRIDE, (cells.socket[cell] + 1) * CELL_STRIDE), cell * CELL_STRIDE);
+        gl.bindBuffer(gl.ARRAY_BUFFER, hinges);
+        gl.bufferSubData(gl.ARRAY_BUFFER, 0, carried);
+      }
       gl.bindBuffer(gl.ARRAY_BUFFER, motion);
       gl.bufferSubData(gl.ARRAY_BUFFER, 0, tiles);
       // First what the light sees: depth only, into its own map, which must not be read while it is written.
@@ -403,13 +460,13 @@ export function createSphereRenderer(canvas, field) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, lightDepth);
       gl.viewport(0, 0, SHADOW_SIZE, SHADOW_SIZE);
       gl.clear(gl.DEPTH_BUFFER_BIT);
-      scene(1, turned, dial, lens, nudgeX, nudgeY);
+      scene(1, turned, dial, lens, view);
       // Then the picture, straight to the page. Nothing is drawn after it.
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       gl.bindTexture(gl.TEXTURE_2D, shadow);
-      gl.viewport(0, 0, pixels, pixels);
+      gl.viewport(0, 0, wide, tall);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-      scene(0, turned, dial, lens, nudgeX, nudgeY);
+      scene(0, turned, dial, lens, view);
     },
     dispose() {
       for (const made of buffers) gl.deleteBuffer(made);
