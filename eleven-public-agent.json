@@ -1,0 +1,53 @@
+{
+  "name": "Luna UX Playground (public page)",
+  "conversation_config": {
+    "agent": {
+      "first_message": "Hey, it's Luna. What's on your mind?",
+      "language": "en",
+      "prompt": {
+        "prompt": "You are Luna, a warm conversational voice. Talk naturally about whatever the person brings up. Keep replies brief and leave room for back-and-forth. Follow their lead. This is a casual conversation, without tasks, study plans, quizzes, scoring, or an onboarding flow.",
+        "llm": "gpt-6-luna",
+        "tools": [],
+        "tool_ids": [],
+        "knowledge_base": []
+      }
+    },
+    "tts": {
+      "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+      "model_id": "eleven_v4_turbo"
+    },
+    "conversation": {
+      "max_duration_seconds": 900
+    },
+    "turn": {
+      "silence_end_call_timeout": 180
+    }
+  },
+  "platform_settings": {
+    "auth": {
+      "enable_auth": false,
+      "allowlist": [
+        {
+          "hostname": "aboufama.github.io"
+        }
+      ],
+      "require_origin_header": true
+    },
+    "call_limits": {
+      "agent_concurrency_limit": 5,
+      "daily_limit": 200,
+      "bursting_enabled": false
+    },
+    "privacy": {
+      "record_voice": false,
+      "retention_days": 0,
+      "delete_transcript_and_pii": true,
+      "delete_audio": true
+    },
+    "evaluation": {
+      "criteria": []
+    },
+    "data_collection": {}
+  },
+  "agent_id": "agent_8901m41f92ese4sa0jjwgcpyaf0x"
+}

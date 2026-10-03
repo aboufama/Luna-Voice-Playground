@@ -1,0 +1,39 @@
+{
+  "name": "Luna UX Playground",
+  "conversation_config": {
+    "agent": {
+      "first_message": "Hey, it's Luna. What's on your mind?",
+      "language": "en",
+      "prompt": {
+        "prompt": "You are Luna, a warm conversational voice. Talk naturally about whatever the person brings up. Keep replies brief and leave room for back-and-forth. Follow their lead. This is a casual conversation, without tasks, study plans, quizzes, scoring, or an onboarding flow.",
+        "llm": "gpt-6-luna",
+        "tools": [],
+        "tool_ids": [],
+        "knowledge_base": []
+      }
+    },
+    "tts": {
+      "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+      "model_id": "eleven_v4_turbo"
+    },
+    "conversation": {
+      "max_duration_seconds": 1800
+    }
+  },
+  "platform_settings": {
+    "auth": {
+      "enable_auth": true
+    },
+    "privacy": {
+      "record_voice": false,
+      "retention_days": 0,
+      "delete_transcript_and_pii": true,
+      "delete_audio": true
+    },
+    "evaluation": {
+      "criteria": []
+    },
+    "data_collection": {}
+  },
+  "agent_id": "agent_0301m3zn6169e2wsmaj3jfgszrr0"
+}

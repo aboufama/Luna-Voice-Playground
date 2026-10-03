@@ -1,0 +1,29 @@
+{
+  "name": "luna-voice-playground",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "npm run start",
+    "build": "vite build",
+    "build:pages": "vite build --mode pages",
+    "start": "npm run build && node --env-file-if-exists=.env server.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "check": "node --check server.mjs && node --check scripts/setup-eleven-agent.mjs && node --check public/voice-session.js && npm test && npm run build"
+  },
+  "dependencies": {
+    "@elevenlabs/client": "^1.26.0",
+    "@vitejs/plugin-react": "^6.0.1",
+    "idb-keyval": "^6.2.2",
+    "katex": "^0.19.0",
+    "lucide-react": "^0.577.0",
+    "mammoth": "^1.11.0",
+    "pdfjs-dist": "^6.3.289",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "vite": "^8.0.12"
+  }
+}
