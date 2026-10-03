@@ -31,7 +31,7 @@
           "hostname": "aboufama.github.io"
         }
       ],
-      "require_origin_header": true
+      "require_origin_header": false
     },
     "call_limits": {
       "agent_concurrency_limit": 5,

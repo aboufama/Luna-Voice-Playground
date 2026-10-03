@@ -9,8 +9,12 @@ import { readFile, writeFile, chmod } from 'node:fs/promises';
 //   with only its ID. Every conversation is billed to this ElevenLabs account,
 //   so it is capped: conversations a day, at once, minutes each, and seconds
 //   of the person saying nothing before it hangs up on an abandoned tab.
-//   The hostname check reads the browser's Origin header, which a script can
-//   forge. The caps are what bound the cost.
+//   The caps are what bound the cost. The hostnames are a weak fence: ElevenLabs
+//   checks them only on its WebSocket transport. The page uses WebRTC, which
+//   presents no origin at all, so any site that knows the agent ID can use it.
+//   (Requiring an origin makes ElevenLabs refuse every WebRTC conversation,
+//   this page's included: "Client did not provide the origin header".)
+//   Clients cannot change the prompt, voice or model.
 process.loadEnvFile('.env');
 const key = process.env.ELEVENLABS_API_KEY;
 if (!key) throw Error('Set ELEVENLABS_API_KEY in .env.');
@@ -53,7 +57,7 @@ const config = {
   },
   platform_settings: {
     auth: open
-      ? { enable_auth: false, allowlist: hosts.map(hostname => ({ hostname })), require_origin_header: true }
+      ? { enable_auth: false, allowlist: hosts.map(hostname => ({ hostname })), require_origin_header: false }
       : { enable_auth: true },
     // Going past the account's own concurrency is charged at double rate, so a public page never does.
     ...(open ? { call_limits: { agent_concurrency_limit: concurrent, daily_limit: daily, bursting_enabled: false } } : {}),
@@ -99,11 +103,10 @@ const checked = await request(`agents/${encodeURIComponent(agentId)}`);
 const settings = checked.platform_settings ?? {};
 const report = { configured: true, model: checked.conversation_config?.agent?.prompt?.llm, voiceModel: checked.conversation_config?.tts?.model_id, private: settings.auth?.enable_auth, tools: checked.conversation_config?.agent?.prompt?.tools?.length ?? 0, knowledgeSources: checked.conversation_config?.agent?.prompt?.knowledge_base?.length ?? 0, recordVoice: settings.privacy?.record_voice };
 if (open) {
-  // Knock the way a page on some other site would, and the way a script sending no origin would.
-  // ElevenLabs hands a token to anyone who asks; it is the conversation itself that is refused,
-  // so the check has to try to open one. A refusal closes the socket with code 3000.
+  // Knock over the WebSocket transport the way a page on some other site would: a refusal closes
+  // the socket with code 3000. (WebRTC cannot be tried from here, and is not covered by the hostnames.)
   const refuses = origin => new Promise(done => {
-    const socket = new WebSocket(`wss://api.elevenlabs.io/v1/convai/conversation?agent_id=${encodeURIComponent(agentId)}`, origin ? { headers: { Origin: origin } } : undefined);
+    const socket = new WebSocket(`wss://api.elevenlabs.io/v1/convai/conversation?agent_id=${encodeURIComponent(agentId)}`, { headers: { Origin: origin } });
     const timer = setTimeout(() => { socket.close(); done(false); }, 10000);
     const settle = refused => { clearTimeout(timer); done(refused); };
     socket.onmessage = () => { socket.close(); settle(false); };
@@ -117,8 +120,9 @@ if (open) {
     doubleRateBursting: settings.call_limits?.bursting_enabled,
     minutesEach: checked.conversation_config?.conversation?.max_duration_seconds / 60,
     hangsUpAfterSilentSeconds: checked.conversation_config?.turn?.silence_end_call_timeout,
-    refusesOtherSites: await refuses('https://not-this-page.example'),
-    refusesNoOrigin: await refuses(null),
+    requiresAnOrigin: settings.auth?.require_origin_header,
+    refusesOtherSitesOverWebSocket: await refuses('https://not-this-page.example'),
+    clientsMayChange: Object.entries({ prompt: settings.overrides?.conversation_config_override?.agent?.prompt?.prompt, firstMessage: settings.overrides?.conversation_config_override?.agent?.first_message, voice: settings.overrides?.conversation_config_override?.tts?.voice_id, model: settings.overrides?.conversation_config_override?.agent?.prompt?.llm }).filter(([, allowed]) => allowed).map(([name]) => name),
   });
 }
 console.log(JSON.stringify(report));
