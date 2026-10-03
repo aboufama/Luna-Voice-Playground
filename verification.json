@@ -1,151 +1,186 @@
 {
-  "checkedAt": "2026-10-03T17:32:24Z",
-  "scope": "Mosaic-only Luna conversational UX fork; ElevenLabs only; always-on voice, living mosaic, PDF drag-in, and a stone sphere variant at /?sphere",
-  "automatedTests": {
-    "command": "npm run check",
-    "passed": 135,
-    "failed": 0,
-    "productionBuild": "passed"
-  },
-  "ui": {
-    "browser": "Headless Brave (Chromium) driven over the DevTools protocol, at 2x device scale",
-    "topBar": false,
-    "backButton": false,
-    "mainMenu": false,
-    "dock": false,
-    "providerSelector": false,
-    "peripheralIcons": false,
-    "onlyInteractiveControl": "The mosaic, and only while Luna is not live: pressing it retries. There is no stop or mute.",
-    "voiceCanvasMatchesOriginal": false,
-    "voiceCanvasChanges": "Stones gain colour glazes while live. The person's voice is a tide of turquoise glaze travelling inward from the rim in rings while each course turns as a rigid ring (a vortex); Luna's is warm glaze travelling outward. Course rotation and rim drift are the original.",
-    "statesSeen": [
-      "grey while connecting",
-      "blue and gold while listening",
-      "turquoise tide from the rim and vortex twist during the spoken question",
-      "warm centre while Luna answers",
-      "static colours under reduced motion"
-    ],
-    "frameCostMs": {
-      "median": 2.2,
-      "p95": 3.6,
-      "max": 4.7,
-      "note": "time inside each animation frame while speech was drawn"
-    },
-    "piecesOnly": {
-      "rule": "Every effect is an individual stone travelling, turning or taking a glaze. No scale, filter, blend or overlay.",
-      "framesRecorded": 329,
-      "stoneStamps": 512631,
-      "canvasCallsSeen": [
-        "setTransform",
-        "clearRect",
-        "drawImage"
-      ],
-      "everyStampSize": "40x40 sprite drawn at 20x20",
-      "stoneScaleMinMax": [
-        1,
-        1
-      ],
-      "shear": 0,
-      "canvasFilter": "none",
-      "canvasBlend": "source-over",
-      "ancestorsWithTransformOrFilter": 0,
-      "outermostStonesTravelPx": {
-        "personSpeaking": 9.0,
-        "lunaSpeaking": 5.0
-      },
-      "notExercised": "The pointer tilt from the original renderer foreshortens the stones under the cursor by up to 5% to show them tipping. No pointer was present in this run."
-    },
-    "sphere": {
-      "address": "/?sphere (the flat medallion stays the default at /)",
-      "stones": 3596,
-      "emptyPlacesShare": 0.063,
-      "renderer": "WebGL2. Two real objects, mortar rings and stones, drawn twice a frame: the light's depth view into a depth-only map, then the picture. Three maps generated at start-up (rock, rock relief, mortar relief). Depth test and face culling only; no blending, no image files, nothing drawn after the picture.",
-      "motion": "mechanical: twelve ticks a second, parts travel between fixed stops; stones lift clear, turn over and seat to show another stone; rings index by whole places with their mortar; rings stand up as pistons in whole notches",
-      "seenLiveOnFinalBuild": [
-        "grey limestone in relief on rough mortar while connecting",
-        "stones turning over to colour from the pole outward on going live",
-        "blue and yellow stone at rest"
-      ],
-      "voiceMechanismsCheckedBy": "replaying a recorded real session (state, level and both spectra) through the motion: up to 698 of 3,596 stones turned to Luna's stone while she spoke and 1,678 to green while the person spoke, returning afterwards; and by 16 motion tests",
-      "voiceMechanismsNotSeenLive": "In the last live captures the Mac was asleep between maintenance wakes and its audio analysers returned zeros, so neither the sphere nor the flat medallion could react to sound. The voice-driven motion on the final build is unseen in a live session.",
-      "fromTheBuildAgentBeforeItStalled": "scripted frame runs at 30-50 ms of Luna's and the person's mechanisms, and 2x close-ups of the relief and mortar; no frame cost was measured for the shadow pass build"
-    }
-  },
-  "provider": {
-    "name": "elevenlabs",
-    "transport": "webrtc",
-    "speechModel": "eleven_v4_turbo",
-    "conversationModel": "gpt-6-luna",
-    "privateAgent": true,
-    "tools": 0,
-    "knowledgeSources": 0,
-    "contextRequestBody": {},
-    "recordVoice": false
-  },
-  "liveCheck": {
-    "provider": "elevenlabs",
-    "physicalMicrophone": false,
-    "syntheticQuestion": "What is seventeen times nineteen?",
-    "outputCaption": "Seventeen times nineteen is three hundred twenty-three.",
-    "startedWithoutUserActivation": true,
-    "audioPlayedWithoutUserActivation": true,
-    "autoplayPolicyTested": "document-user-activation-required",
-    "clickWhileLiveKeptTheSameSession": true,
-    "hiddenReleasedMicrophone": true,
-    "visibleResumedWithoutClick": true,
-    "microphoneAllowedLaterStartedWithoutClick": true,
-    "tokenFailureRetriedAfterSeconds": [
-      1,
-      2,
-      4,
-      8
-    ],
-    "recoveredWithoutClick": true,
-    "errors": [],
-    "passed": true
-  },
-  "limits": [
-    "Physical microphone acoustics were not tested. The visual gate and scale were calibrated on a synthetic voice and adapt to the speaker, but have not been seen with a real voice or room noise.",
-    "Resting after a silent 30-minute session, and reconnecting after a spoken one, are covered by unit tests of the policy only; no session was run to the provider's time limit.",
-    "A real network loss was not reproduced: DevTools offline emulation did not end the WebRTC session. The retry path was exercised by failing the token request instead.",
-    "The agent re-engages after roughly ten seconds of silence ('Are you still there?'). That is agent configuration, unchanged here.",
-    "The provider conversation has current-session memory; hiding the tab or reconnecting starts a new conversation.",
-    "Starting audio with no click was verified in Chromium only, and depends on the microphone already being allowed. Safari and Firefox were not run.",
-    "The sphere's relief, mortar and mechanical motion were finished after the agent building them stalled twice (the Mac was asleep). Its frame cost with the added light pass has not been measured, and it has been seen only in headless Brave on one machine.",
-    "The sphere's voice-driven mechanisms were not seen in a live session on the final build (see ui.sphere.voiceMechanismsNotSeenLive). Stones still pass through nothing by test, but a turning stone's clearance from its neighbours is argued from its outline, not measured."
+ "checkedAt": "2026-10-03T20:26:40Z",
+ "scope": "Mosaic-only Luna conversational UX fork; ElevenLabs only; always-on voice; the mosaic is a hollow stone sphere (flat medallion at /?flat); a dropped PDF is swallowed through a crack in the shell; published as a static site on GitHub Pages",
+ "automatedTests": {
+  "command": "npm run check",
+  "passed": 144,
+  "failed": 0,
+  "productionBuild": "passed",
+  "alsoRunBy": "the GitHub Actions workflow, before every publish"
+ },
+ "ui": {
+  "browser": "Headless Brave (Chromium) driven over the DevTools protocol, at 2x device scale",
+  "topBar": false,
+  "backButton": false,
+  "mainMenu": false,
+  "dock": false,
+  "providerSelector": false,
+  "peripheralIcons": false,
+  "onlyInteractiveControl": "The mosaic, and only while Luna is not live: pressing it retries. There is no stop or mute.",
+  "voiceCanvasMatchesOriginal": false,
+  "voiceCanvasChanges": "Stones gain colour glazes while live. The person's voice is a tide of turquoise glaze travelling inward from the rim in rings while each course turns as a rigid ring (a vortex); Luna's is warm glaze travelling outward. Course rotation and rim drift are the original.",
+  "statesSeen": [
+   "grey while connecting",
+   "blue and gold while listening",
+   "turquoise tide from the rim and vortex twist during the spoken question",
+   "warm centre while Luna answers",
+   "static colours under reduced motion"
   ],
-  "sourceHashes": {
-    "src/main.jsx": "c67a7fe49fe0c84771010dc6ec937ea581689a0bb3688a3b5479de33f3a2bd4f",
-    "src/VoiceCanvas.jsx": "bb4b6d7437e8c7c28bf755c215d1bfb246a5fcc949bafbb342dae412164be67d",
-    "src/talk-screen.css": "ab85e5597f4f4e92a845c6879f0ea51e1803f1046c5c0586a743f94c77584ec6",
-    "src/eleven-voice.js": "866260cfb7a7a6376b182d73d08c53aef698df233f0b5e2e86d316c757297b17",
-    "src/voice-presence.mjs": "beead648f29dc35669cf1e5829600408f4888adaaec52bba37f1c86fb5c4427e",
-    "src/mosaic-light.mjs": "b4f7985fc8ae041c64e18e769a186ed4eb8bbb28c06eb01bc695b4b6131d76f4",
-    "src/mosaic-pigment.mjs": "c88d22ef108d8b742133ca5d958992ae582e39432e313a2acb00de6af9d58629",
-    "server.mjs": "baed9aa057ebbf1289a24740dc236559b8ea668e10c0ea75e7fe75738ecf90e7",
-    "public/eleven-raw-audio.js": "6731b766e9e6176d56b9c6964975dd7dd045db88ce3b2b0b787f5fbeb9f1325d",
-    "src/study-material.mjs": "763c1bad683960f2df8b2a23bac46a091cd5b07bc2b4bae15e93c31ece2102f3",
-    "src/study-material-pdf.js": "8e1a892c55e20fe0fbecea989c30ebf87a813f3e6787c76467f8ef4d28293a5a",
-    "src/sphere/SphereCanvas.jsx": "40f50a54892118c6f818f9b977daf45a86838d23a8e8cd2863f867ed2837afe6",
-    "src/sphere/sphere-field.mjs": "6907127a9f2ce3261cc1695cbcfad05f37d960285476c8da7805fb62f9649999",
-    "src/sphere/sphere-math.mjs": "8079b0753541f2422e60eee1f3ca04304304774c585c0ac68310ddc29cc9242e",
-    "src/sphere/sphere-mesh.mjs": "7cabb386b114dc88b91f416d2c2a0b6ff980ba34d1a8f7e159dd86fa6dd3e37c",
-    "src/sphere/sphere-mortar.mjs": "2a6080e14d639f80b2bcdb8bb215ce99565950d46ba89392bbdc161491beb112",
-    "src/sphere/sphere-motion.mjs": "1e56344ef773a395bcc7e1999078676a00bcce264acf6bd8c2558a8e8d2f19df",
-    "src/sphere/sphere-renderer.mjs": "f79eaf6fe1eed6fdff33f7689acc62c27f508133128efd3ec67847722c7545f8",
-    "src/sphere/sphere-rock.mjs": "344227019f705a6d98e7d8d08ed76a7c7938fb85e28fa26e23d18a32cc1671ac"
+  "frameCostMs": {
+   "median": 2.2,
+   "p95": 3.6,
+   "max": 4.7,
+   "note": "time inside each animation frame while speech was drawn"
   },
-  "studyMaterial": {
-    "seenLiveOnASideBuild": "a generated 7-page PDF dragged onto the page in headless Brave: the hatch opened towards it, the document joined as stones, three chapter stones stood out of the rim, pressing one chose its chapter, and Luna answered a spoken question from that chapter's text ('March')",
-    "withAndWithoutBookmarks": true,
-    "contextMessagesSent": {
-      "onArrival": "title and chapter titles",
-      "onChoosing": "that chapter's text, up to 15,000 characters in three messages"
-    },
-    "notChecked": [
-      "a real textbook or lecture PDF",
-      "scanned PDFs beyond being refused",
-      "the sphere's own hatch and chapter stones (not built)"
-    ]
+  "piecesOnly": {
+   "rule": "Every effect is an individual stone travelling, turning or taking a glaze. No scale, filter, blend or overlay.",
+   "framesRecorded": 329,
+   "stoneStamps": 512631,
+   "canvasCallsSeen": [
+    "setTransform",
+    "clearRect",
+    "drawImage"
+   ],
+   "everyStampSize": "40x40 sprite drawn at 20x20",
+   "stoneScaleMinMax": [
+    1,
+    1
+   ],
+   "shear": 0,
+   "canvasFilter": "none",
+   "canvasBlend": "source-over",
+   "ancestorsWithTransformOrFilter": 0,
+   "outermostStonesTravelPx": {
+    "personSpeaking": 9.0,
+    "lunaSpeaking": 5.0
+   },
+   "notExercised": "The pointer tilt from the original renderer foreshortens the stones under the cursor by up to 5% to show them tipping. No pointer was present in this run."
+  },
+  "sphere": {
+   "address": "/ (the default). The flat medallion is at /?flat",
+   "stones": 3596,
+   "emptyPlacesShare": 0.063,
+   "renderer": "WebGL2. Two real objects, the mortar's cells (one rigid slab to each place, with an underside and cut sides, so the shell is hollow and can break) and the stones (the sphere's own plus the nine of a document's sheet), drawn twice a frame: the light's depth view, then the picture. Depth test and face culling only; no blending, no image files, nothing drawn after the picture.",
+   "motion": "mechanical: twelve ticks a second, parts travel between fixed stops; stones lift clear, turn over and seat to show another stone; rings index by whole places with their mortar; rings stand up as pistons in whole notches",
+   "seenLiveOnFinalBuild": [
+    "grey limestone in relief on rough mortar while connecting",
+    "stones turning over to colour from the pole outward on going live",
+    "blue and yellow stone at rest"
+   ],
+   "voiceMechanismsCheckedBy": "replaying a recorded real session (state, level and both spectra) through the motion: up to 698 of 3,596 stones turned to Luna's stone while she spoke and 1,678 to green while the person spoke, returning afterwards; and by 16 motion tests"
+  },
+  "footOfPage": {
+   "visibleText": "none, at rest, while dragging, and with a document in hand (checked by reading every visible text node in the lower part of the page)",
+   "names": "a document's or a chapter's name shows for about three seconds where Luna's words go: when the document is read, when a chapter is chosen, and while its stone is pointed at",
+   "filePicker": "pressing the mosaic twice opened the file picker, with a mouse and with touch emulation",
+   "keyboard": "Tab reached a hidden \"Add a PDF\" control, which became visible only while focused"
   }
+ },
+ "provider": {
+  "name": "elevenlabs",
+  "transport": "webrtc",
+  "speechModel": "eleven_v4_turbo",
+  "conversationModel": "gpt-6-luna",
+  "privateAgent": true,
+  "tools": 0,
+  "knowledgeSources": 0,
+  "contextRequestBody": {},
+  "recordVoice": false
+ },
+ "liveCheck": {
+  "provider": "elevenlabs",
+  "physicalMicrophone": false,
+  "syntheticQuestion": "What is seventeen times nineteen?",
+  "outputCaption": "Seventeen times nineteen is three hundred twenty-three.",
+  "startedWithoutUserActivation": true,
+  "audioPlayedWithoutUserActivation": true,
+  "autoplayPolicyTested": "document-user-activation-required",
+  "clickWhileLiveKeptTheSameSession": true,
+  "hiddenReleasedMicrophone": true,
+  "visibleResumedWithoutClick": true,
+  "microphoneAllowedLaterStartedWithoutClick": true,
+  "tokenFailureRetriedAfterSeconds": [
+   1,
+   2,
+   4,
+   8
+  ],
+  "recoveredWithoutClick": true,
+  "errors": [],
+  "passed": true
+ },
+ "limits": [
+  "Physical microphone acoustics were not tested. The visual gate and scale were calibrated on a synthetic voice and adapt to the speaker, but have not been seen with a real voice or room noise.",
+  "Resting after a silent 30-minute session, and reconnecting after a spoken one, are covered by unit tests of the policy only; no session was run to the provider's time limit.",
+  "A real network loss was not reproduced: DevTools offline emulation did not end the WebRTC session. The retry path was exercised by failing the token request instead.",
+  "The agent re-engages after roughly ten seconds of silence ('Are you still there?'). That is agent configuration, unchanged here.",
+  "The provider conversation has current-session memory; hiding the tab or reconnecting starts a new conversation.",
+  "Starting audio with no click was verified in Chromium only, and depends on the microphone already being allowed. Safari and Firefox were not run.",
+  "The sphere's cell shell and the swallow were seen only in headless Brave (software WebGL) on one machine. Its frame cost has not been measured.",
+  "Safari and Firefox were not run, on desktop or phone. No real phone was used: phone checks are Chromium's touch emulation."
+ ],
+ "sourceHashes": {
+  "src/main.jsx": "f85a61e469eb122d3cdacd9577c095deb29cc402a23fa0e47327f5a977166952",
+  "src/VoiceCanvas.jsx": "bb5386494944f1f72dd975db0f179ffb79575e731f7d6da6206357bb98b14f49",
+  "src/talk-screen.css": "523017eb050dc930f66cf63e416b2dfc31a13c578daa151e97900adb571c449d",
+  "src/eleven-voice.js": "726c1cdb2658b06114c8e99f92ede1c82ad27ab230f5e3c3539fd52500bb3ca0",
+  "src/voice-presence.mjs": "beead648f29dc35669cf1e5829600408f4888adaaec52bba37f1c86fb5c4427e",
+  "src/mosaic-light.mjs": "b4f7985fc8ae041c64e18e769a186ed4eb8bbb28c06eb01bc695b4b6131d76f4",
+  "src/mosaic-pigment.mjs": "c88d22ef108d8b742133ca5d958992ae582e39432e313a2acb00de6af9d58629",
+  "server.mjs": "d30308cad51cb4191f7b73f024ff6bb05973fa78f906a73c87f58f335c3f12e3",
+  "public/eleven-raw-audio.js": "6731b766e9e6176d56b9c6964975dd7dd045db88ce3b2b0b787f5fbeb9f1325d",
+  "src/study-material.mjs": "763c1bad683960f2df8b2a23bac46a091cd5b07bc2b4bae15e93c31ece2102f3",
+  "src/study-material-pdf.js": "8e1a892c55e20fe0fbecea989c30ebf87a813f3e6787c76467f8ef4d28293a5a",
+  "src/sphere/SphereCanvas.jsx": "1de10cb23fa16dd5911e1deeb87b95d73bfa7bc004cd9e5910d6e42a8c507006",
+  "src/sphere/sphere-field.mjs": "5928be941b19bbd84141251d956976079608a8b6073eec9267ed4b4c75787b05",
+  "src/sphere/sphere-math.mjs": "035bcc5ae3dee03f5907be2286247f024ea1c19a69aeaa2aa59c4fd62bc282ec",
+  "src/sphere/sphere-mesh.mjs": "903d40574c309ffe3683da38a7ef0d5ed348155c4a2ac63f4567c471a2004ea5",
+  "src/sphere/sphere-mortar.mjs": "2a6080e14d639f80b2bcdb8bb215ce99565950d46ba89392bbdc161491beb112",
+  "src/sphere/sphere-motion.mjs": "e7b5c93bcf4c6f1e121f89da8df2fa5dcb238273810717ab8c0448f8ce100e20",
+  "src/sphere/sphere-renderer.mjs": "d0fa4307b8b3ffe6f0e63977924a245f079f71825ee651b3f14ba713eb294eff",
+  "src/sphere/sphere-rock.mjs": "344227019f705a6d98e7d8d08ed76a7c7938fb85e28fa26e23d18a32cc1671ac",
+  "vite.config.js": "82ea128e8b56b36755e1426f77a55e8625a75805556b829540829d2d5c51bad0",
+  "shared/content-policy.mjs": "c85ccba4f3b656d1143f24bc90ba0eee5fc1fcb8c348cb411e3061b209b8bbc6",
+  "scripts/setup-eleven-agent.mjs": "33dcd7e2a5e8fed9774f157ddd1e95ca693cb558ff57ed0fbc66f11b0eec87f4",
+  ".github/workflows/pages.yml": "106c767541fa60cb2b4ff757665bf885694416d31de6069bd8e63a2fd8d8bdcd"
+ },
+ "studyMaterial": {
+  "seenInHeadlessBrave": "a generated 7-page PDF dragged from the page's lower right towards the sphere at 1024x768: a sheet of nine pale stones followed the pointer; the shell cracked open towards it, showing a dark hollow inside, wider as it came nearer; on the drop the stones went in and the pieces shut; a band of pale stones crossed the sphere; the document's name appeared; three chapter stones answered to pointing and pressing",
+  "phone": "390x844 with touch emulation: two taps opened the picker, the chosen PDF was swallowed from the foot of the page, tapping a chapter stone chose it; no sideways scroll",
+  "byTest": "pieces of shell are carried only by unit turns and shifts; stones in a piece keep their distances; rings do not turn while the shell is open; all nine sheet stones end inside the shell before it shuts; no stone shows the page before the shell shuts, hundreds do at once after, none is left; chapter stones stand in order",
+  "withAndWithoutBookmarks": true,
+  "contextMessagesSent": {
+   "onArrival": "title and chapter titles",
+   "onChoosing": "that chapter's text, up to 15,000 characters in three messages"
+  },
+  "notChecked": [
+   "a real textbook or lecture PDF",
+   "scanned PDFs beyond being refused",
+   "a real drag from Finder with the operating system's own drag image over the page",
+   "frame cost of the cell shell on a phone or an integrated GPU: it draws about 400,000 triangles twice a frame",
+   "the flat medallion, which keeps its older intake and now has no chapter list beside it"
+  ]
+ },
+ "staticSite": {
+  "address": "https://aboufama.github.io/Luna-Voice-Playground/",
+  "repository": "https://github.com/aboufama/Luna-Voice-Playground (public)",
+  "how": "npm run build:pages: relative paths, the content policy in the page, a public ElevenLabs agent named by its ID. No API key in the site, the repository or the workflow (tests/static-site.test.mjs; a scan of every committed file for the two key values in .env found none).",
+  "liveCheck": {
+   "greeted": true,
+   "syntheticQuestionAnswered": "Three hundred twenty-three.",
+   "consoleErrors": 0,
+   "requestsCarryingAKey": 0
+  },
+  "publicAgent": {
+   "atOnce": 5,
+   "conversationsADay": 200,
+   "minutesEach": 15,
+   "hangsUpAfterSilentSeconds": 180,
+   "doubleRateBursting": false,
+   "clientsMayChange": [],
+   "recordVoice": false
+  },
+  "hostnameList": "Names aboufama.github.io. ElevenLabs enforced it for its WebSocket transport (another origin was refused with code 3000) but not for WebRTC, which the page uses: with 'require an origin' on, every WebRTC conversation from the published page itself was refused, so it is off. Any site with the agent ID can therefore hold a WebRTC conversation; the limits above bound the cost.",
+  "account": "Creator plan, usage-based billing off when checked on 2026-10-03: an exhausted month stops Luna everywhere until the credits reset."
+ }
 }
