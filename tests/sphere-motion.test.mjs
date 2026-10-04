@@ -355,24 +355,32 @@ test('a document held near cracks the shell open where it faces it: pieces swing
   for (let index = 0; index < field.count; index++) if (index !== motion.parts.hand) assert.ok(motion.height[index] === 0 && Math.abs(Math.hypot(...place(motion, index)) - RADIUS - field.seat[index]) < 1e-3);
 });
 
-test('dropped, the sheet shoots in through the crack stone by stone, the shell snaps shut, and what was swallowed spreads through the stones', () => {
+test('dropped, every stone of the sheet starts for the crack at once and gathers speed into it, the shell snaps shut, and what was swallowed spreads', () => {
   const { motion, run, live } = machine();
   live();
   run(1500, { ...quiet, file: document(1) });
   const intake = { id: 'reader', at: document(1).at, aim: document(1).aim }, sheet = [...Array(field.sheet.count).keys()].map(stone => field.count + stone);
-  const entered = new Map();
-  let reported = null, shutAt = null, most = 0, pageAtShut = 0;
+  const entered = new Map(), began = sheet.map(stone => Array.from(place(motion, stone))), gone = [];
+  let reported = null, shutAt = null, most = 0, pageAtShut = 0, frames = 0, dropped = null;
   run(5200, { ...quiet, intake }, time => {
+    dropped ??= time;
+    // How far each stone of the sheet has come from where it was let go, frame by frame.
+    if (frames++ < 30) gone.push(sheet.map((stone, index) => Math.hypot(...[0, 1, 2].map(axis => place(motion, stone)[axis] - began[index][axis]))));
     for (const stone of sheet) if (!entered.has(stone) && Math.hypot(...place(motion, stone)) < RADIUS - SHELL) entered.set(stone, time);
     if (shutAt === null && motion.mouth() === null) { shutAt = time; pageAtShut = motion.shown.filter(side => side === PAGE).length; }
     if (reported === null && motion.taken() === 'reader') reported = time;
     most = Math.max(most, motion.shown.filter(side => side === PAGE).length);
   });
-  // Every stone of the sheet went in, one after another, before the shell shut; and they stay inside it.
+  // The instant it is dropped every stone is on its way, none waiting for another: a tenth of a second on, all nine have moved.
+  assert.ok(gone[6].every(far => far > .05), `after a tenth of a second the nine had come ${gone[6].map(far => far.toFixed(1)).join(', ')} px`);
+  // Each gathers speed as it goes, as a thing falling does: further in every frame than in the one before, until it is in.
+  for (let index = 0; index < sheet.length; index++) for (let frame = 3; frame < 16; frame++) {
+    assert.ok(gone[frame + 1][index] - gone[frame][index] > gone[frame][index] - gone[frame - 1][index] - 1e-6, 'never slowing on the way in');
+  }
+  // They all go in, not in step with one another, before the shell shuts; and they stay inside it.
   const times = [...entered.values()].sort((a, b) => a - b);
   assert.equal(entered.size, field.sheet.count);
-  assert.ok(times.every((time, index) => index === 0 || time > times[index - 1]) && times.at(-1) <= shutAt, 'one after another, all before it shut');
-  assert.ok(times.at(-1) - times[0] < 1200, 'and quickly');
+  assert.ok(new Set(times).size > 3 && times.at(-1) <= shutAt && times.at(-1) - dropped < 900, 'all in within a second of the drop, before it shut');
   assert.ok(sheet.every(stone => Math.hypot(...place(motion, stone)) < RADIUS - SHELL - 30) && motion.sheet() === 'inside');
   assert.ok(whole(motion) && reported !== null && reported >= shutAt, 'the shell is whole again, and the page is told once it is in');
   // Then it spreads: no stone showed the page while the shell was open; hundreds did at once afterwards; and none is left showing it.

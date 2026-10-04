@@ -39,9 +39,11 @@ export const MOUTH = 44, PIECES = 6, GAPE = [0, .28, .72, 1.2];
 // If the document comes to be further than this (radians, seen from the sphere's centre) from the middle
 // of the crack, the crack shuts and opens again where the document now is.
 const STRAY = .62;
-// The sheet's stones go in one a tick. Each takes this many ticks to reach the air above the crack, this
-// far above the surface, and one more to shoot down the middle of it to its place inside.
-const FLY = 2, ABOVE = 62, INSIDE = 74;
+// Dropped, every stone of the sheet starts for the crack at the same instant and gathers speed as if it
+// were falling into it: a curve by way of the air this far above the crack, then down the middle of it to
+// its place this far inside. The quickest takes FLY ticks, the slowest SLOWEST more, and none waits for another.
+export const FLY = 4.5, SLOWEST = 2.5;
+const ABOVE = 62, INSIDE = 74, GATHER = 2.3;
 // What the sphere has swallowed spreads through it: outward from the crack, this many pixels of surface
 // a tick, every stone turns to the page's stone for this many ticks and then back.
 const SPREAD = 13, DWELL = 3;
@@ -187,8 +189,9 @@ export function createSphereMotion(field) {
   // The sheet: where its middle is held (as the camera sees it), where each of its stones is and how it
   // is turned (in the sphere's own space), and where each began its flight and when.
   const held = new Float64Array(3), sheetPlace = new Float64Array(sheet * 3), sheetTurn = new Float64Array(sheet * 4);
-  const flightFrom = new Float64Array(sheet * 3), flightTurn = new Float64Array(sheet * 4), flightTick = new Int32Array(sheet).fill(-1);
-  let sheetIs = 'inside', sheetLeft = -999;
+  const flightFrom = new Float64Array(sheet * 3), flightTurn = new Float64Array(sheet * 4), flightBegan = new Float64Array(sheet).fill(-1), flightLasts = new Float64Array(sheet).fill(FLY);
+  const flightTo = new Float64Array([0, 0, 1]);
+  let sheetIs = 'inside', sheetLeft = -999, heldFor = 0;
   for (let stone = 0; stone < sheet; stone++) { settle(stone, [0, 0, 1], sheetPlace, stone * 3); sheetTurn[stone * 4 + 3] = 1; }
   // What has been swallowed, spreading: when it reaches each stone.
   const spreadAt = new Int32Array(count).fill(-1);
@@ -259,7 +262,7 @@ export function createSphereMotion(field) {
   // of a pie cut by an unsteady hand. Each piece is the sockets of one slice, stones and mortar together,
   // hinged along its far edge. The break runs between places, so it is as jagged as the stones are.
   function crack(t) {
-    const middle = Float64Array.from(faced), [east, north] = square(middle), born = hash(t + 1, 5) * TAU;
+    const middle = Float64Array.from(taking && taking.depart >= 0 ? flightTo : faced), [east, north] = square(middle), born = hash(t + 1, 5) * TAU;
     const widths = Array.from({ length: PIECES }, (_, piece) => .7 + hash(t + piece * 7 + 3, 9) * .6), whole = widths.reduce((sum, width) => sum + width, 0);
     const pieces = [];
     let from = 0;
@@ -295,13 +298,10 @@ export function createSphereMotion(field) {
     }
     shell.changed++; mouth = null;
   }
-  // The sheet's stones leave the hand one a tick, the nearest to the crack first.
-  function launch(t) {
-    const above = mouth.middle.map(part => part * (radius + ABOVE));
-    const order = Array.from({ length: sheet }, (_, stone) => stone).sort((a, b) =>
-      Math.hypot(sheetPlace[a * 3] - above[0], sheetPlace[a * 3 + 1] - above[1], sheetPlace[a * 3 + 2] - above[2]) - Math.hypot(sheetPlace[b * 3] - above[0], sheetPlace[b * 3 + 1] - above[1], sheetPlace[b * 3 + 2] - above[2]));
-    order.forEach((stone, rank) => { flightTick[stone] = t + rank; });
-    flightFrom.set(sheetPlace); flightTurn.set(sheetTurn);
+  // The sheet's stones all leave the hand at once, each a little quicker or slower than the next, for the crack at `towards`.
+  function launch(at, towards) {
+    for (let stone = 0; stone < sheet; stone++) { flightBegan[stone] = at + hash(stone + 1, 57) * .4; flightLasts[stone] = FLY + hash(stone + 1, 59) * SLOWEST; }
+    flightFrom.set(sheetPlace); flightTurn.set(sheetTurn); flightTo.set(towards);
     sheetIs = 'flying';
   }
   // What was swallowed spreads from where it went in: it reaches each stone when it has crossed the surface to it.
@@ -354,14 +354,13 @@ export function createSphereMotion(field) {
     if (mouth) {
       const off = Math.acos(clamp(mouth.middle[0] * faced[0] + mouth.middle[1] * faced[1] + mouth.middle[2] * faced[2], -1, 1));
       const swallowing = taking && taking.depart >= 0;
-      // Dropped, the sheet's stones go in as soon as the crack stands at least ajar, and it snaps shut behind the last.
-      if (taking && !swallowing && off <= STRAY && mouth.pieces.every(piece => piece.stop >= 2 && t - piece.tick >= 1)) { taking.depart = t; launch(t); }
-      if (swallowing && taking.shut < 0 && t >= taking.depart + sheet + FLY) {
+      // Dropped, the sheet's stones are already on their way; the crack snaps shut behind the last of them.
+      if (swallowing && taking.shut < 0 && t >= taking.depart + .4 + FLY + SLOWEST) {
         taking.shut = t; sheetIs = 'inside';
         for (let stone = 0; stone < sheet; stone++) settle(stone, mouth.middle, sheetPlace, stone * 3);
       }
       mouth.snap = Boolean(taking && taking.shut >= 0);
-      mouth.wish = mouth.snap || !about || (off > STRAY && !swallowing) ? 0 : taking ? 3 : near < .3 ? 1 : near < .7 ? 2 : 3;
+      mouth.wish = mouth.snap || !about || (off > STRAY && !taking) ? 0 : taking ? 3 : near < .3 ? 1 : near < .7 ? 2 : 3;
       let shut = true;
       for (const piece of mouth.pieces) {
         if (piece.stop !== mouth.wish && t - piece.tick >= 1 && (mouth.snap || t >= mouth.born + piece.lag)) {
@@ -458,7 +457,7 @@ export function createSphereMotion(field) {
     hearing = attentive = reach = clock = handNow = handFrom = handTo = gazeX = gazeY = 0; heardClick = spokenClick = false;
     wasLive = live; liveTick = live ? done - 999 : -999; leaveTick = -999; thinkTick = -999;
     if (mouth) mend();
-    taking = null; hungry = false; spreadTick = -999; spreadFrom = null; flightTick.fill(-1);
+    taking = null; hungry = false; spreadTick = -999; spreadFrom = null; flightBegan.fill(-1); heldFor = 0;
     if (sheetIs !== 'inside') { sheetIs = 'inside'; for (let stone = 0; stone < sheet; stone++) settle(stone, [0, 0, 1], sheetPlace, stone * 3); }
     for (let k = 0; k < COURSES; k++) {
       steps[k] = wanted[k] = live ? 0 : home[k]; dialFrom[k] = dialTo[k] = steps[k] * pitch[k]; dialTick[k] = pinTick[k] = wantTick[k] = -99;
@@ -563,15 +562,13 @@ export function createSphereMotion(field) {
         sheetPlace[p] = scratch[0]; sheetPlace[p + 1] = scratch[1]; sheetPlace[p + 2] = scratch[2];
         quatMul(unposed, quatAxis(0, 0, 1, (hash(stone + 1, 53) - .5) * .16, twist), twist);
         sheetTurn.set(twist, q);
-      } else if (sheetIs === 'flying' && flightTick[stone] >= 0) {
-        // One speed to the air above the crack, then straight down the middle of it, tumbling as it goes.
-        const since = Math.max(0, now - flightTick[stone]), first = Math.min(1, since / FLY), second = clamp(since - FLY);
-        settle(stone, mouth ? mouth.middle : spreadFrom || [0, 0, 1], scratch, 0);
-        for (let axis = 0; axis < 3; axis++) {
-          const above = (mouth ? mouth.middle[axis] : scratch[axis] / radius) * (radius + ABOVE);
-          sheetPlace[p + axis] = second > 0 ? above + (scratch[axis] - above) * second : flightFrom[p + axis] + (above - flightFrom[p + axis]) * first;
-        }
-        quatMul(flightTurn.subarray(q, q + 4), quatAxis(1, .3, 0, Math.min(FLY + 1, since) * 1.9, twist), twist);
+        if (stone === 0) heldFor++;
+      } else if (sheetIs === 'flying' && flightBegan[stone] >= 0) {
+        // Falling into the crack: slowly at first, then faster and faster, along a curve that ends straight down the middle of it.
+        const gone = clamp((now - flightBegan[stone]) / flightLasts[stone]), fall = Math.pow(gone, GATHER), yet = 1 - fall;
+        settle(stone, flightTo, scratch, 0);
+        for (let axis = 0; axis < 3; axis++) sheetPlace[p + axis] = yet * yet * flightFrom[p + axis] + 2 * yet * fall * flightTo[axis] * (radius + ABOVE) + fall * fall * scratch[axis];
+        quatMul(flightTurn.subarray(q, q + 4), quatAxis(1, .3 + .4 * hash(stone + 1, 61), 0, fall * 5.2, twist), twist);
         sheetTurn.set(twist, q);
       }
       tiles[at + TURN] = sheetTurn[q]; tiles[at + TURN + 1] = sheetTurn[q + 1]; tiles[at + TURN + 2] = sheetTurn[q + 2]; tiles[at + TURN + 3] = sheetTurn[q + 3];
@@ -597,6 +594,8 @@ export function createSphereMotion(field) {
     if (reduced) { if (intake && intake.id !== taken) taken = intake.id; rest(); origin = now - (done + 1) * TICK; compose(done + 1); return; }
     const dropped = intake && intake.id !== taken ? intake : null, about = file || dropped;
     if (dropped && !taking) taking = { id: dropped.id, depart: -1, shut: -1 };
+    // The instant it is let go (and there is a crack to fall into), every stone of the sheet starts for it.
+    if (taking && taking.depart < 0 && sheetIs === 'held' && heldFor > 0 && mouth) { taking.depart = (now - origin) / TICK; launch(taking.depart, mouth.middle); }
     hungry = Boolean(file);
     if (about) {
       quatRotate(unposed, about.aim, faced);
@@ -610,7 +609,7 @@ export function createSphereMotion(field) {
       if (sheetIs !== 'held') {
         const far = Math.hypot(about.at[0], about.at[1]), ox = far > 1 ? about.at[0] / far : 0, oy = far > 1 ? about.at[1] / far : -1;
         held[0] = about.at[0] + ox * BEYOND; held[1] = about.at[1] + oy * BEYOND; held[2] = about.at[2];
-        sheetIs = 'held';
+        sheetIs = 'held'; heldFor = 0;
       }
       if (file) for (let axis = 0; axis < 3; axis++) held[axis] = follow(held[axis], file.at[axis], dt, HELD);
     } else if (sheetIs === 'held' && !taking) { sheetIs = 'leaving'; sheetLeft = done; }
