@@ -1,6 +1,6 @@
 {
  "checkedAt": "2026-10-04T02:50:38Z",
- "scope": "Mosaic-only Luna conversational UX fork; ElevenLabs only; always-on voice; the mosaic is a hollow stone sphere (flat medallion at /?flat); a dropped PDF is swallowed through a crack in the shell; published as a static site on GitHub Pages",
+ "scope": "Mosaic-only Plato conversational UX fork; ElevenLabs only; always-on voice; the mosaic is a hollow stone sphere (flat medallion at /?flat); a dropped PDF is swallowed through a crack in the shell; published as a static site on GitHub Pages",
  "automatedTests": {
   "command": "npm run check",
   "passed": 144,
@@ -16,14 +16,14 @@
   "dock": false,
   "providerSelector": false,
   "peripheralIcons": false,
-  "onlyInteractiveControl": "The mosaic, and only while Luna is not live: pressing it retries. There is no stop or mute.",
+  "onlyInteractiveControl": "The mosaic, and only while Plato is not live: pressing it retries. There is no stop or mute.",
   "voiceCanvasMatchesOriginal": false,
-  "voiceCanvasChanges": "Stones gain colour glazes while live. The person's voice is a tide of turquoise glaze travelling inward from the rim in rings while each course turns as a rigid ring (a vortex); Luna's is warm glaze travelling outward. Course rotation and rim drift are the original.",
+  "voiceCanvasChanges": "Stones gain colour glazes while live. The person's voice is a tide of turquoise glaze travelling inward from the rim in rings while each course turns as a rigid ring (a vortex); Plato's is warm glaze travelling outward. Course rotation and rim drift are the original.",
   "statesSeen": [
    "grey while connecting",
    "blue and gold while listening",
    "turquoise tide from the rim and vortex twist during the spoken question",
-   "warm centre while Luna answers",
+   "warm centre while Plato answers",
    "static colours under reduced motion"
   ],
   "frameCostMs": {
@@ -51,8 +51,8 @@
    "canvasBlend": "source-over",
    "ancestorsWithTransformOrFilter": 0,
    "outermostStonesTravelPx": {
-    "personSpeaking": 9.0,
-    "lunaSpeaking": 5.0
+    "personSpeaking": 9,
+    "platoSpeaking": 5
    },
    "notExercised": "The pointer tilt from the original renderer foreshortens the stones under the cursor by up to 5% to show them tipping. No pointer was present in this run."
   },
@@ -67,11 +67,11 @@
     "stones turning over to colour from the pole outward on going live",
     "blue and yellow stone at rest"
    ],
-   "voiceMechanismsCheckedBy": "replaying a recorded real session (state, level and both spectra) through the motion: up to 698 of 3,596 stones turned to Luna's stone while she spoke and 1,678 to green while the person spoke, returning afterwards; and by 16 motion tests"
+   "voiceMechanismsCheckedBy": "replaying a recorded real session (state, level and both spectra) through the motion: up to 698 of 3,596 stones turned to Plato's stone during assistant speech and 1,678 to green while the person spoke, returning afterwards; and by 16 motion tests"
   },
   "footOfPage": {
    "visibleText": "none, at rest, while dragging, and with a document in hand (checked by reading every visible text node in the lower part of the page)",
-   "names": "a document's or a chapter's name shows for about three seconds where Luna's words go: when the document is read, when a chapter is chosen, and while its stone is pointed at",
+   "names": "a document's or a chapter's name shows for about three seconds where Plato's words go: when the document is read, when a chapter is chosen, and while its stone is pointed at",
    "filePicker": "pressing the mosaic twice opened the file picker, with a mouse and with touch emulation",
    "keyboard": "Tab reached a hidden \"Add a PDF\" control, which became visible only while focused"
   }
@@ -163,8 +163,8 @@
   "smoothed": "After the owner found the first version 'too rigid ... like keyframes playing one after another': all nine sheet stones now start at the drop and accelerate along a curve (seen at +97, +237, +393 ms after the drop as one loosening cluster, all in by about half a second); the pieces of shell are spring-hinged and follow the document's distance continuously; the ripple reaches each stone at its own moment instead of ring by ring on the tick. By test: a tenth of a second after the drop all nine have moved and none slows on the way in; no piece jumps more than 0.06 rad in a frame; no two pieces stand alike or still. Then, asked for 'a bit more fluid, the ripple ... right as the ingestion happens, the opening ... more procedural and even smoother': the six hinged pieces were replaced by a procedural peel (every socket near the opening's middle turned by a curl that grows towards the middle, with an uneven, moving rim), which grows from nothing with the document's nearness and follows it over the surface without shutting; the ripple now leaves when the first stone goes in (seen: pale stones at the opening's rim at about +536 ms while stones were still entering, the opening shut by about +700 ms) and slows as it spreads; the sphere leans towards a close document. By test: the opening only grows as the document nears, no stone of it moves more than 2.5 px in a frame, sockets nearer the middle are turned further than any near the rim, it follows to the other side without shutting, and some stones already show the page when the shell shuts."
  },
  "staticSite": {
-  "address": "https://aboufama.github.io/Luna-Voice-Playground/",
-  "repository": "https://github.com/aboufama/Luna-Voice-Playground (public)",
+  "address": "https://aboufama.github.io/plato/",
+  "repository": "https://github.com/aboufama/plato (public)",
   "how": "npm run build:pages: relative paths, the content policy in the page, a public ElevenLabs agent named by its ID. No API key in the site, the repository or the workflow (tests/static-site.test.mjs; a scan of every committed file for the two key values in .env found none).",
   "liveCheck": {
    "greeted": true,
@@ -182,6 +182,47 @@
    "recordVoice": false
   },
   "hostnameList": "Names aboufama.github.io. ElevenLabs enforced it for its WebSocket transport (another origin was refused with code 3000) but not for WebRTC, which the page uses: with 'require an origin' on, every WebRTC conversation from the published page itself was refused, so it is off. Any site with the agent ID can therefore hold a WebRTC conversation; the limits above bound the cost.",
-  "account": "Creator plan, usage-based billing off when checked on 2026-10-03: an exhausted month stops Luna everywhere until the credits reset."
+  "account": "Creator plan, usage-based billing off when checked on 2026-10-03: an exhausted month stops Plato everywhere until the credits reset."
+ },
+ "rebrandVerification": {
+  "checkedDate": "2026-10-04",
+  "name": "Plato",
+  "repository": "https://github.com/aboufama/plato",
+  "site": "https://aboufama.github.io/plato/",
+  "automatedTests": {
+   "command": "npm run check",
+   "passed": 144,
+   "failed": 0,
+   "productionBuild": "passed",
+   "staticBuild": "npm run build:pages passed"
+  },
+  "namingScan": "Only the upstream conversation model identifier remains; source branding and asset filenames use Plato.",
+  "hostedAgentUpdate": "Pending authenticated ElevenLabs access; checked-in names, greetings and prompts have been renamed.",
+  "previousChecks": "Earlier browser, microphone and performance observations above predate this rename. Their original source hashes are preserved; no live voice check was repeated for the rename.",
+  "sourceHashes": {
+   "src/main.jsx": "f61533fb3594dcf49b2049316040c084c1d8150ac6993ea37ff8909292dea341",
+   "src/VoiceCanvas.jsx": "bb5386494944f1f72dd975db0f179ffb79575e731f7d6da6206357bb98b14f49",
+   "src/talk-screen.css": "c8beedff13424f8da65a728dc385cd817bce48b6f0a73f4b025c7f8b670b59e5",
+   "src/eleven-voice.js": "582819efac0f10595016716fdd6dc17944f69031db14fecf20447fc2e6c20554",
+   "src/voice-presence.mjs": "beead648f29dc35669cf1e5829600408f4888adaaec52bba37f1c86fb5c4427e",
+   "src/mosaic-light.mjs": "c2cd2db601e27149cc72d5e8d8453ea2d08553e4952a5030d02486b30f1bce70",
+   "src/mosaic-pigment.mjs": "0c16331a2f865a9bce0055e3d81001677b1f906cd10cec6dca3c44abbc076358",
+   "server.mjs": "4eff88a5cfc5a4e435aca3cedb31ae4c2ed8e368c06c6e246cac01b5f24a3f0c",
+   "public/eleven-raw-audio.js": "6731b766e9e6176d56b9c6964975dd7dd045db88ce3b2b0b787f5fbeb9f1325d",
+   "src/study-material.mjs": "7b28ae1d00ac6d028a241fc3169c57089ab8978b6a0fed7b80a021805879aa3e",
+   "src/study-material-pdf.js": "ae5d6336abd4e0a88529a0ae1434a5030a53199a0346b56a6a6af0dc1cf5c075",
+   "src/sphere/SphereCanvas.jsx": "f1cf40ff7d523e92978162df163967f8b32eeeca78aeb7bc898d9531fc573cf6",
+   "src/sphere/sphere-field.mjs": "5928be941b19bbd84141251d956976079608a8b6073eec9267ed4b4c75787b05",
+   "src/sphere/sphere-math.mjs": "035bcc5ae3dee03f5907be2286247f024ea1c19a69aeaa2aa59c4fd62bc282ec",
+   "src/sphere/sphere-mesh.mjs": "903d40574c309ffe3683da38a7ef0d5ed348155c4a2ac63f4567c471a2004ea5",
+   "src/sphere/sphere-mortar.mjs": "2a6080e14d639f80b2bcdb8bb215ce99565950d46ba89392bbdc161491beb112",
+   "src/sphere/sphere-motion.mjs": "b796704d7526590b6a2c3651acfd3b57e3fecb5e2f982cc77210007469e88098",
+   "src/sphere/sphere-renderer.mjs": "d0fa4307b8b3ffe6f0e63977924a245f079f71825ee651b3f14ba713eb294eff",
+   "src/sphere/sphere-rock.mjs": "344227019f705a6d98e7d8d08ed76a7c7938fb85e28fa26e23d18a32cc1671ac",
+   "vite.config.js": "fb4531b3548014c82fbee1468f340ecf6874bf4b909527e1d44ff79f1fac4489",
+   "shared/content-policy.mjs": "c85ccba4f3b656d1143f24bc90ba0eee5fc1fcb8c348cb411e3061b209b8bbc6",
+   "scripts/setup-eleven-agent.mjs": "2bc74bfdbf286b1996b0a9f6442d57b31a3326fa6a8802006662af44b0b3e1e9",
+   ".github/workflows/pages.yml": "106c767541fa60cb2b4ff757665bf885694416d31de6069bd8e63a2fd8d8bdcd"
+  }
  }
 }

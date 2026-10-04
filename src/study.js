@@ -42,7 +42,7 @@ export function buildDemoGuide(materials, title) {
     script += part;
   }
   script += ' Pause here and explain one idea in your own words. Open the source notes to check the details.';
-  return {mode:'demo',...stats,overview:`Your ${materials.length} ${materials.length===1?'source is':'sources are'} organized below, with one excerpt and a recall prompt for each file. This preview helps you try the study flow; GPT-6 Luna can synthesize the material when connected.`,topics,questions,script};
+  return {mode:'demo',...stats,overview:`Your ${materials.length} ${materials.length===1?'source is':'sources are'} organized below, with one excerpt and a recall prompt for each file. This preview helps you try the study flow; the connected model can synthesize the material.`,topics,questions,script};
 }
 
 const material = (id,name,text) => ({id,name,text,type:'md',size:new TextEncoder().encode(text).length});

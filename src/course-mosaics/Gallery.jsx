@@ -12,13 +12,13 @@ function saveBlob(blob, filename) {
 }
 
 function downloadSVG(course, monochrome) {
-  saveBlob(new Blob([courseSVG(course, monochrome)], { type: 'image/svg+xml' }), `luna-${course.id}${monochrome ? '-graphite' : ''}.svg`);
+  saveBlob(new Blob([courseSVG(course, monochrome)], { type: 'image/svg+xml' }), `plato-${course.id}${monochrome ? '-graphite' : ''}.svg`);
 }
 
 function downloadPNG(course, monochrome) {
   const canvas = document.createElement('canvas'); canvas.width = canvas.height = 1800;
   drawCourse(canvas.getContext('2d'), createCourseTiles(course, monochrome), { size: ART_SIZE, ratio: 5 });
-  canvas.toBlob(blob => { if (blob) saveBlob(blob, `luna-${course.id}${monochrome ? '-graphite' : ''}.png`); }, 'image/png');
+  canvas.toBlob(blob => { if (blob) saveBlob(blob, `plato-${course.id}${monochrome ? '-graphite' : ''}.png`); }, 'image/png');
 }
 
 function Pigments({ course, monochrome }) {
@@ -53,11 +53,11 @@ function Detail({ index, onChange, onClose, monochrome, moving }) {
 export default function Gallery() {
   const [monochrome, setMonochrome] = useState(false), [moving, setMoving] = useState(true), [selected, setSelected] = useState(null);
   const reduced = useReducedMotion();
-  useEffect(() => { const previous = document.title; document.title = 'Course mosaics — Luna'; return () => { document.title = previous; }; }, []);
+  useEffect(() => { const previous = document.title; document.title = 'Course mosaics — Plato'; return () => { document.title = previous; }; }, []);
   return <div className="cm-page">
-    <header className="cm-nav"><a href="/" className="cm-back"><ArrowLeft size={15} /><span>Luna Study</span></a><span className="cm-nav-caption">THE COURSE COLLECTION</span><span className="cm-edition">№ 001–012</span></header>
+    <header className="cm-nav"><a href="/" className="cm-back"><ArrowLeft size={15} /><span>Plato Study</span></a><span className="cm-nav-caption">THE COURSE COLLECTION</span><span className="cm-edition">№ 001–012</span></header>
     <main className="cm-main">
-      <section className="cm-intro"><div><span className="cm-eyebrow">TWELVE STUDIES IN STONE</span><h1>A world in<br /><em>every stone.</em></h1></div><div className="cm-intro-note"><span className="cm-small-mark" aria-hidden="true">✳</span><p>Each subject, in its own shape.<br />Twelve course mosaics in mineral color,<br className="cm-desktop-break" /> with the smallest of movements.</p><span className="cm-intro-caption">Luna’s hand-cut stone, reimagined.</span></div></section>
+      <section className="cm-intro"><div><span className="cm-eyebrow">TWELVE STUDIES IN STONE</span><h1>A world in<br /><em>every stone.</em></h1></div><div className="cm-intro-note"><span className="cm-small-mark" aria-hidden="true">✳</span><p>Each subject, in its own shape.<br />Twelve course mosaics in mineral color,<br className="cm-desktop-break" /> with the smallest of movements.</p><span className="cm-intro-caption">Plato’s hand-cut stone, reimagined.</span></div></section>
       <div className="cm-toolbar"><span className="cm-count">The collection <span>12</span></span><div className="cm-controls"><div className="cm-segment" role="group" aria-label="Mosaic palette"><button aria-pressed={!monochrome} onClick={() => setMonochrome(false)}>Mineral color</button><button aria-pressed={monochrome} onClick={() => setMonochrome(true)}>Graphite</button></div><button className="cm-motion" disabled={reduced} aria-pressed={moving && !reduced} onClick={() => setMoving(!moving)} aria-label={reduced ? 'Motion disabled by reduced-motion preference' : moving ? 'Pause mosaic movement' : 'Play mosaic movement'}>{moving && !reduced ? <Pause size={13} /> : <Play size={13} />}<span>{reduced ? 'Reduced motion' : moving ? 'In motion' : 'At rest'}</span></button></div></div>
       <div className="cm-grid">{COURSES.map((course, index) => <article className="cm-card" key={course.id}>
         <button className="cm-art-button" aria-label={`Explore ${course.name} mosaic`} onClick={() => setSelected(index)}>
@@ -68,7 +68,7 @@ export default function Gallery() {
       </article>)}</div>
       <section className="cm-colophon"><div><span className="cm-eyebrow">ONE VISUAL LANGUAGE</span><h2>Cut from the same stone.</h2></div><p>Imperfect edges. Small spaces for light.<br />Open pages, branching ideas, a living helix.<br className="cm-desktop-break" /> Each silhouette tells its own story.</p><span className="cm-colophon-number" aria-hidden="true">12</span></section>
     </main>
-    <footer className="cm-footer"><span>Luna / Course studies</span><span>Made for a quiet place to think.</span><span>2026</span></footer>
+    <footer className="cm-footer"><span>Plato / Course studies</span><span>Made for a quiet place to think.</span><span>2026</span></footer>
     {selected !== null && <Detail index={selected} onChange={setSelected} onClose={() => setSelected(null)} monochrome={monochrome} moving={moving} />}
   </div>;
 }

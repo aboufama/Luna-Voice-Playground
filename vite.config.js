@@ -20,7 +20,7 @@ function publicAgent() {
 // and it takes the one file the voice page needs from public/ instead of all of it.
 function staticSite() {
   return {
-    name: 'luna-static-site',
+    name: 'plato-static-site',
     transformIndexHtml: () => [{ tag: 'meta', attrs: { 'http-equiv': 'Content-Security-Policy', content: CONTENT_SECURITY_POLICY }, injectTo: 'head-prepend' }],
     generateBundle() {
       this.emitFile({ type: 'asset', fileName: 'eleven-raw-audio.js', source: readFileSync(new URL('./public/eleven-raw-audio.js', import.meta.url)) });

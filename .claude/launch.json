@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "luna-ux-playground",
+      "name": "plato-ux-playground",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["start"],
       "port": 5190

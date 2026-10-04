@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "title": "Luna — A world in every stone.",
-  "description": "Twelve subject-shaped mosaics made with Luna’s hand-cut tesserae, mineral pigments, and open negative space.",
+  "title": "Plato — A world in every stone.",
+  "description": "Twelve subject-shaped mosaics made with Plato’s hand-cut tesserae, mineral pigments, and open negative space.",
   "nativeCanvasSize": 360,
   "sources": {
     "field": "src/mosaic-field.mjs",
@@ -26,8 +26,8 @@
       "shape": "subject-silhouette",
       "source": "src/course-mosaics/sciences.mjs",
       "files": {
-        "png": "luna-mathematics.png",
-        "svg": "luna-mathematics.svg"
+        "png": "plato-mathematics.png",
+        "svg": "plato-mathematics.svg"
       }
     },
     {
@@ -46,8 +46,8 @@
       "shape": "subject-silhouette",
       "source": "src/course-mosaics/sciences.mjs",
       "files": {
-        "png": "luna-physics.png",
-        "svg": "luna-physics.svg"
+        "png": "plato-physics.png",
+        "svg": "plato-physics.svg"
       }
     },
     {
@@ -66,8 +66,8 @@
       "shape": "subject-silhouette",
       "source": "src/course-mosaics/sciences.mjs",
       "files": {
-        "png": "luna-chemistry.png",
-        "svg": "luna-chemistry.svg"
+        "png": "plato-chemistry.png",
+        "svg": "plato-chemistry.svg"
       }
     },
     {
@@ -86,8 +86,8 @@
       "shape": "subject-silhouette",
       "source": "src/course-mosaics/sciences.mjs",
       "files": {
-        "png": "luna-biology.png",
-        "svg": "luna-biology.svg"
+        "png": "plato-biology.png",
+        "svg": "plato-biology.svg"
       }
     },
     {
@@ -106,8 +106,8 @@
       "shape": "subject-silhouette",
       "source": "src/course-mosaics/sciences.mjs",
       "files": {
-        "png": "luna-computer-science.png",
-        "svg": "luna-computer-science.svg"
+        "png": "plato-computer-science.png",
+        "svg": "plato-computer-science.svg"
       }
     },
     {
@@ -126,8 +126,8 @@
       "shape": "subject-silhouette",
       "source": "src/course-mosaics/sciences.mjs",
       "files": {
-        "png": "luna-astronomy.png",
-        "svg": "luna-astronomy.svg"
+        "png": "plato-astronomy.png",
+        "svg": "plato-astronomy.svg"
       }
     },
     {
@@ -146,8 +146,8 @@
       "shape": "subject-silhouette",
       "source": "src/course-mosaics/humanities.mjs",
       "files": {
-        "png": "luna-economics.png",
-        "svg": "luna-economics.svg"
+        "png": "plato-economics.png",
+        "svg": "plato-economics.svg"
       }
     },
     {
@@ -166,8 +166,8 @@
       "shape": "subject-silhouette",
       "source": "src/course-mosaics/humanities.mjs",
       "files": {
-        "png": "luna-world-history.png",
-        "svg": "luna-world-history.svg"
+        "png": "plato-world-history.png",
+        "svg": "plato-world-history.svg"
       }
     },
     {
@@ -186,8 +186,8 @@
       "shape": "subject-silhouette",
       "source": "src/course-mosaics/humanities.mjs",
       "files": {
-        "png": "luna-literature.png",
-        "svg": "luna-literature.svg"
+        "png": "plato-literature.png",
+        "svg": "plato-literature.svg"
       }
     },
     {
@@ -206,8 +206,8 @@
       "shape": "subject-silhouette",
       "source": "src/course-mosaics/humanities.mjs",
       "files": {
-        "png": "luna-psychology.png",
-        "svg": "luna-psychology.svg"
+        "png": "plato-psychology.png",
+        "svg": "plato-psychology.svg"
       }
     },
     {
@@ -226,8 +226,8 @@
       "shape": "subject-silhouette",
       "source": "src/course-mosaics/humanities.mjs",
       "files": {
-        "png": "luna-music-theory.png",
-        "svg": "luna-music-theory.svg"
+        "png": "plato-music-theory.png",
+        "svg": "plato-music-theory.svg"
       }
     },
     {
@@ -246,8 +246,8 @@
       "shape": "subject-silhouette",
       "source": "src/course-mosaics/humanities.mjs",
       "files": {
-        "png": "luna-environmental-science.png",
-        "svg": "luna-environmental-science.svg"
+        "png": "plato-environmental-science.png",
+        "svg": "plato-environmental-science.svg"
       }
     }
   ],
@@ -266,8 +266,8 @@
     },
     "contactSheet": {
       "file": "collection.png",
-      "width": 1800,
-      "height": 1700,
+      "width": 1290,
+      "height": 1219,
       "columns": 4,
       "rows": 3,
       "background": "#faf9f6"

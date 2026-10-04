@@ -161,7 +161,7 @@ test('each colour of the shared palette is a real stone, and no two pieces of it
       const key = name + pigments[name].map(Math.round).join(',');
       byColour.set(key, [...(byColour.get(key) || []), [...stone.subarray(0, 3)].join(',')]);
     }
-    // The blues are lapis or a green-blue stone, the gilded lines marble, a person's glaze green stone, Luna's terracotta and marble.
+    // The blues are lapis or a green-blue stone, the gilded lines marble, a person's glaze green stone, Plato's terracotta and marble.
     const [cool, bright, warm] = ['cool', 'bright', 'warm'].map(name => field[name][index * 4 + 3]);
     if (pigments.gilded) assert.ok(cool === KIND.marble || cool === KIND.terracotta); else assert.ok(cool === KIND.lapis || cool === KIND.greenstone);
     assert.ok(pigments.gilded ? bright === KIND.marble : bright === KIND.greenstone);

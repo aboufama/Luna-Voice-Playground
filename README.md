@@ -1,28 +1,30 @@
-# Luna UX Playground
+# Plato
 
-**http://127.0.0.1:5190/** is a single voice screen using the Luna mosaic, a sphere of stone. (**/?flat** shows the flat medallion it grew from.) Luna is live whenever the page is in view: there is no start, stop, or mute control. Captions appear while Luna speaks; errors use the same quiet caption area.
+[Live app](https://aboufama.github.io/plato/) · [Repository](https://github.com/aboufama/plato)
 
-There is no top bar, back button, main menu, dock, account control, hat picker, provider selector, or Library. The only study feature is taking in a PDF by dragging it onto the page. Nothing is written at the foot of the page. Saved study data and old scenario URLs are ignored. The original `../Luna-Study` project is independent.
+**http://127.0.0.1:5190/** is a single voice screen using the Plato mosaic, a sphere of stone. (**/?flat** shows the flat medallion it grew from.) Plato is live whenever the page is in view: there is no start, stop, or mute control. Captions appear while Plato speaks; errors use the same quiet caption area.
+
+There is no top bar, back button, main menu, dock, account control, hat picker, provider selector, or Library. The only study feature is taking in a PDF by dragging it onto the page. Nothing is written at the foot of the page. Saved study data and old scenario URLs are ignored. The original study project is independent.
 
 ## Always on
 
-- Opening the page starts the conversation. The browser asks for the microphone the first time; once it is allowed, no click is needed, including for Luna's audio.
+- Opening the page starts the conversation. The browser asks for the microphone the first time; once it is allowed, no click is needed, including for Plato's audio.
 - Hiding the tab releases the microphone. Coming back opens a fresh conversation by itself.
-- A dropped connection or failed token request retries on its own after 1, 2, 4, 8 and 15 seconds. A blocked microphone or an exhausted account waits for a person; allowing the microphone then starts Luna without a click.
-- When ElevenLabs ends a session (the agent's 30-minute limit), Luna reconnects if anyone spoke during it. A session nobody spoke in is treated as an unattended tab: Luna rests until the pointer moves, a key is pressed, or the tab is refocused.
-- Clicking the mosaic does nothing while Luna is live. While she is not, a click or key press retries at once.
+- A dropped connection or failed token request retries on its own after 1, 2, 4, 8 and 15 seconds. A blocked microphone or an exhausted account waits for a person; allowing the microphone then starts Plato without a click.
+- When ElevenLabs ends a session (the agent's 30-minute limit), Plato reconnects if anyone spoke during it. A session nobody spoke in is treated as an unattended tab: Plato rests until the pointer moves, a key is pressed, or the tab is refocused.
+- Clicking the mosaic does nothing while Plato is live. While disconnected, a click or key press retries at once.
 
 The policy is `afterVoiceClose` in `src/voice-presence.mjs`. A live session keeps the screen awake (the SDK's wake lock) and is billed by ElevenLabs for as long as the tab stays in view.
 
 ## Mosaic
 
-Grey stone means not connected. Colour means Luna is live.
+Grey stone means not connected. Colour means Plato is live.
 
 **The rule:** every effect is made by individual stones. A stone can travel, turn, and take a glaze at its own moment. Nothing is scaled, filtered, blurred, or laid over the mosaic, and no stone ever changes size. What looks like the medallion growing is each course stepping outward by its own distance. `tests/mosaic-light.test.mjs` fails if the renderer gains any other canvas call.
 
 - **Listening:** ink-blue glass, with the compass construction and the meander border in gold. Stones take and release their glaze one by one as it breathes.
-- **Your voice:** the mirror image of Luna's. A tide of turquoise glaze enters at the rim and travels inward in rings, reaching further the louder you are and never flooding the centre. As it passes, each course turns as one rigid ring, rim first and inner courses further, so the mosaic winds like a vortex and unwinds when you stop. Every course also steps out slightly with the sound of the instant, all the way round, so the outline stays a circle. Loudness is measured against your own recent loudest moment.
-- **Luna's voice:** warm glaze leaves the centre and travels outward in rings of parted stones, thinning before the rim, while the courses turn like nested dials.
+- **Your voice:** the mirror image of Plato's. A tide of turquoise glaze enters at the rim and travels inward in rings, reaching further the louder you are and never flooding the centre. As it passes, each course turns as one rigid ring, rim first and inner courses further, so the mosaic winds like a vortex and unwinds when you stop. Every course also steps out slightly with the sound of the instant, all the way round, so the outline stays a circle. Loudness is measured against your own recent loudest moment.
+- **Plato's voice:** warm glaze leaves the centre and travels outward in rings of parted stones, thinning before the rim, while the courses turn like nested dials.
 - **Reduced motion:** the same colours, with no breathing, rings, or travel.
 
 ## Study material
@@ -33,10 +35,10 @@ Drag a PDF anywhere onto the page. Where nothing can be dragged, press the mosai
 - **The sphere opens:** where it faces the sheet, the shell peels back as a flower opens. It is not a thing with parts but a place: round its middle, every socket, stone and mortar together, is turned the more the nearer the middle it lies, so the shell curls up and out and the hollow inside shows. The opening grows from nothing; its reach and its curl follow how near the document is, with no steps in them; its middle goes after the document over the surface, so the shell closes behind it and opens ahead of it; and neither its rim nor its curl is the same all the way round or from one moment to the next. The sphere also leans its face a little towards a document that is close.
 - **On the drop:** every stone of the sheet starts for the opening at the same instant and gathers speed as if falling into it, each a little quicker or slower than the next, along a curve that ends straight down the middle of it. The sphere nods towards them.
 - **Swallowed:** the moment the first stone goes in, a ripple leaves the opening and crosses the whole sphere, quickly at first and more slowly as it goes: each stone in its own turn rises out of its socket, rolls right over, pausing with the page's pale stone outward, and seats again. The opening shuts behind the last stone while the ripple is already on its way. While the PDF is still being read the sphere ripples again.
-- **Chapters:** one stone per chapter then turns to the page's stone for good and stands up on its own ring, clockwise from the top. Point at one and its chapter's name shows where Luna's words go; press it to choose that chapter, and it turns to Luna's warm stone and stands twice as high. The document's name shows for a moment when it has been read.
+- **Chapters:** one stone per chapter then turns to the page's stone for good and stands up on its own ring, clockwise from the top. Point at one and its chapter's name shows where Plato's words go; press it to choose that chapter, and it turns to Plato's warm stone and stands twice as high. The document's name shows for a moment when it has been read.
 - **How chapters are found:** the PDF's own bookmarks if it has at least two; otherwise lines set as headings; otherwise even runs of pages. At most 24.
-- **What Luna knows:** the PDF is read in the browser and is never uploaded as a file. When it arrives Luna is told its title and chapter titles. When a chapter is chosen she is sent that chapter's text, up to 15,000 characters in three messages, and told plainly if it was cut short. This is the only study data that reaches ElevenLabs, and it goes through `sendContext` in `src/eleven-voice.js`; starting a conversation still sends nothing. Every new conversation (after a reconnect or a hidden tab) is told again.
-- **Limits:** PDFs only, up to 20 MB and 250 pages, text only (scans need OCR, which is not here). The document is held in memory and is gone on reload. Luna's agent prompt is still the casual-conversation one, so she will talk about the chapter but will not run a quiz unless asked.
+- **What Plato knows:** the PDF is read in the browser and is never uploaded as a file. When it arrives Plato is told its title and chapter titles. When a chapter is chosen Plato is sent that chapter's text, up to 15,000 characters in three messages, and told plainly if it was cut short. This is the only study data that reaches ElevenLabs, and it goes through `sendContext` in `src/eleven-voice.js`; starting a conversation still sends nothing. Every new conversation (after a reconnect or a hidden tab) is told again.
+- **Limits:** PDFs only, up to 20 MB and 250 pages, text only (scans need OCR, which is not here). The document is held in memory and is gone on reload. Plato's agent prompt is still the casual-conversation one, so Plato will discuss the chapter without a built-in quiz flow.
 - **With a keyboard or a screen reader:** the same controls (add a PDF, each chapter, put the document away) are at the foot of the page, and can be seen only while a key has one of them.
 
 The reading is in `src/study-material-pdf.js`, the chapter and briefing logic in `src/study-material.mjs`, the opening, the sheet, the ripple and the chapter stones in `src/sphere/sphere-motion.mjs`. The flat medallion keeps its older way of taking a document in (`src/mosaic-light.mjs`).
@@ -53,7 +55,7 @@ Both versions fit a phone held upright (checked at 390×844 and 375×667): the m
 
 The mosaic is a hollow sphere of stone tesserae set in mortar, moving as a machine made of stone. The flat medallion at **/?flat** has the same voice behaviour; only the picture differs.
 
-- **Stones:** 3,596 rigid hand-cut stones, about a fifth larger than the flat medallion's, each with its own twelve-point outline, chipped corners, slight tilt and height. About 6% of the places are empty. A stone is its rock in colour and in relief: a split face that is domed, dished or ridged, with grain, pits and veins that catch the light, standing clearly proud of the mortar. Each palette colour is a real stone: lapis, yellow marble, a green stone for your voice, terracotta and red marble for Luna's, grey limestone when not connected.
+- **Stones:** 3,596 rigid hand-cut stones, about a fifth larger than the flat medallion's, each with its own twelve-point outline, chipped corners, slight tilt and height. About 6% of the places are empty. A stone is its rock in colour and in relief: a split face that is domed, dished or ridged, with grain, pits and veins that catch the light, standing clearly proud of the mortar. Each palette colour is a real stone: lapis, yellow marble, a green stone for your voice, terracotta and red marble for Plato's, grey limestone when not connected.
 - **Mortar:** a shell of rigid cells, one to a place, a few pixels thick; the cells of a course make a ring that turns as one, each carrying its own stone. Rough and sandy, with recessed joints, mortar squeezed up against the stones, and a socket where each stone sits or is missing. It is made at start-up from the layout itself (`sphere-mortar.mjs`); there are no image files.
 - **Light:** one light from the upper left. Stones and mortar shade what lies behind them, and shade gathers in joints and pits.
 - **Motion is mechanical.** Everything runs on a tick, twelve a second, and travels from one fixed stop to the next at one speed with a hard stop. Nothing fades, eases, drifts or changes colour in place. (Taking in a document is the one exception. A document is not a part of the machine: its stones fall, the shell peels open and what is swallowed spreads, each smoothly, as such things do.)
@@ -65,7 +67,7 @@ The mosaic is a hollow sphere of stone tesserae set in mortar, moving as a machi
   - Connecting: a lock being dialled. Groups of rings stand up a notch and click round, seeking.
   - Going live: the rings find register from the pole outward, and behind that the stones turn over to colour.
   - Quiet: a clock. One ring steps one place a second, carrying one raised stone as its hand.
-  - Luna speaking: stones turn to her stone ring by ring from the pole, more rings the louder she is, and each syllable ratchets those rings a place and back.
+  - Plato speaking: stones turn to warm stone ring by ring from the pole, more rings with louder speech, and each syllable ratchets those rings a place and back.
   - You speaking: the rings at the outline turn to green stone and stand up as pistons, a pair of rings to each part of the spectrum and a notch to each step of loudness; each syllable knocks ring after ring in to the centre, and the sphere tips towards you.
 - **The same rule holds.** Two real objects are drawn, the mortar's cells and the stones (the sphere's own, and the nine of a document's sheet), twice a frame: first as the light sees them (depth only, to know what is in shadow), then the picture. Each stone gets only a rotation, a position and which stone is on each side. No blending, no image files, and nothing drawn after the picture. `tests/sphere-rigid.test.mjs` and `tests/sphere-motion.test.mjs` state these rules and fail if they are broken.
 - It also turns one stop towards a moving pointer. Without WebGL2, or if the graphics context is lost and not restored, the flat medallion is shown instead.
@@ -75,7 +77,7 @@ The mosaic is a hollow sphere of stone tesserae set in mortar, moving as a machi
 
 ElevenLabs is the only active voice connection. The browser uses the official SDK over WebRTC. The tiny local server serves the page and issues a short-lived token from `POST /api/session`; that endpoint accepts only `{}` and rejects context or overrides. The API key stays in the server's `.env` and is never sent to a browser.
 
-The separate private **Luna UX Playground** agent uses `eleven_v4_turbo`, the existing voice, and hosted `gpt-6-luna` for a brief, casual conversation. Its prompt is in `eleven-agent-config.json`. It has no tools, knowledge sources, retrieval, tests, grading, onboarding, or custom orchestration. Each connection is fresh, with only the current conversation and whatever chapter of a dropped PDF the page has told it about. Voice recording is disabled; transcript/audio deletion and zero-day retention are configured.
+The separate private **Plato UX Playground** agent uses `eleven_v4_turbo`, the existing voice, and hosted `gpt-6-luna` for a brief, casual conversation. Its prompt is in `eleven-agent-config.json`. The provider model identifier is an API value, independent of the Plato app name. It has no tools, knowledge sources, retrieval, tests, grading, onboarding, or custom orchestration. Each connection is fresh, with only the current conversation and whatever chapter of a dropped PDF the page has told it about. Voice recording is disabled; transcript/audio deletion and zero-day retention are configured.
 
 ## GitHub Pages
 
@@ -85,14 +87,14 @@ A static host has no server to hold the API key, and a key written into a public
 - `npm run build:pages` builds the same page into `dist-pages/` with that agent's ID, relative paths (it works under any address), the content policy in the page itself, and only the one file it needs from `public/`. `tests/static-site.test.mjs` fails if a key could reach anything the browser loads.
 - `.github/workflows/pages.yml` runs the tests, builds, and publishes on every push to `main`. It uses no secrets.
 
-Anyone who opens the page can talk to Luna, and every minute is drawn from this ElevenLabs account. What bounds that:
+Anyone who opens the page can talk to Plato, and every minute is drawn from this ElevenLabs account. What bounds that:
 
 - **The agent's own limits**, set by the script (`--concurrent`, `--daily`, `--minutes`, `--silence`). As published: 5 conversations at once, 200 a day, 15 minutes each, and it hangs up after 3 minutes of the visitor saying nothing. The script's own defaults are tighter (3, 50, 10 minutes, 2 minutes). Going past the account's concurrency at double rate is turned off.
-- **Clients cannot change Luna.** The prompt, first message, voice and model are fixed on the agent; a page can only talk to her and hand her text.
+- **Clients cannot change Plato.** The prompt, first message, voice and model are fixed on the agent; a page can only talk to Plato and provide text.
 - **The hostname list is a weak fence.** The agent names the host it is published on, and ElevenLabs enforces that for its WebSocket transport. This page uses WebRTC, which has the better audio and is the one that behaves on phones, and WebRTC presents no origin at all. With "require an origin" switched on, ElevenLabs refuses every WebRTC conversation, this page's included (that is what the first publish did), so it is off, and a WebRTC client on any site that knows the agent ID is let in. The limits above are what bound the cost.
-- **The account's plan.** With usage-based billing off, an exhausted month means Luna goes quiet everywhere, including the local playground, until the credits reset.
+- **The account's plan.** With usage-based billing off, an exhausted month means Plato goes quiet everywhere, including the local playground, until the credits reset.
 
-To take the page offline for visitors without touching the site, delete the public agent in ElevenLabs or run the script again with a different hostname.
+To take the page offline for visitors without touching the site, disable or delete the public agent in ElevenLabs. Changing only the hostname list does not block this page’s WebRTC transport.
 
 ## Run
 
@@ -103,19 +105,21 @@ npm install
 npm start
 ```
 
-The current local `.env` is configured. For a separate setup, copy `.env.example`, supply your ElevenLabs key and agent ID, or run `node scripts/setup-eleven-agent.mjs` to create the private plain-conversation agent. Keep `.env` private.
+Copy `.env.example` to `.env`, supply your ElevenLabs key and agent ID, or run `node scripts/setup-eleven-agent.mjs` to create the private plain-conversation agent. Keep `.env` private.
+
+The hosted voice agent stores its own name, greeting, and prompt. Editing the checked-in JSON does not update ElevenLabs; rerun the setup script with authenticated access to synchronize those settings. For the public agent, preserve its published limits with `node scripts/setup-eleven-agent.mjs --public aboufama.github.io --daily=200 --concurrent=5 --minutes=15 --silence=180`.
 
 After frontend edits, run `npm run build` and refresh. Restart after server edits. `npm run check` runs syntax, lifecycle/security tests, and the production build. `npm run build:pages` builds the static site for GitHub Pages.
 
 ## Edit
 
-- `src/main.jsx`: mosaic-only screen; starts Luna, and reconnects, rests, or waits when a session ends.
+- `src/main.jsx`: mosaic-only screen; starts Plato, and reconnects, rests, or waits when a session ends.
 - `src/voice-presence.mjs`: the always-on policy (retry delays, when to rest).
-- `src/study-material.mjs`, `src/study-material-pdf.js`: turning a dropped PDF into chapters, and what Luna is told about it.
+- `src/study-material.mjs`, `src/study-material-pdf.js`: turning a dropped PDF into chapters, and what Plato is told about it.
 - `src/eleven-voice.js`: ElevenLabs connection (a token from the local server, or a public agent on a static host), captions, volume and spectrum, pause while hidden, and cleanup.
 - `src/VoiceCanvas.jsx`: mosaic renderer; draws each stone as mineral plus up to three glazes.
 - `src/mosaic-light.mjs`: living light: colour, breathing, voice rings, and how far the stones travel. Timings and strengths are the constants at the top.
-- `src/mosaic-pigment.mjs`: the palette. Each stone's listening, crest, and Luna-speaking colours.
+- `src/mosaic-pigment.mjs`: the palette. Each stone's listening, crest, and Plato-speaking colours.
 - `src/mosaic-choreography.mjs`, `src/mosaic-rest.mjs`: the original course rotation and rim drift.
 - `src/sphere/`: the sphere. `sphere-field.mjs` lays the stones, gaps and motifs on the sphere, `sphere-motion.mjs` is the machine (ticks, stops, what each state does, and how a document is swallowed), `sphere-mesh.mjs` is the stone shape and the mortar's cells, `sphere-rock.mjs` and `sphere-mortar.mjs` generate the rock and mortar relief, `sphere-renderer.mjs` is the WebGL2 drawing, `SphereCanvas.jsx` mounts it.
 - `src/talk-screen.css`: full-height layout after removing app controls.

@@ -1,6 +1,6 @@
 // Resample microphone frames to continuous 16 kHz mono PCM16. GPT-Live uses
 // 20 ms packets; the original ElevenLabs path retains its 100 ms packets.
-class LunaMicProcessor extends AudioWorkletProcessor {
+class PlatoMicProcessor extends AudioWorkletProcessor {
   constructor(options){super();this.phase=0;this.sum=0;this.count=0;this.index=0;this.power=0;this.chunkSamples=options?.processorOptions?.chunkSamples===320?320:1600;this.samples=new Int16Array(this.chunkSamples);}
   process(inputs){
     const channel=inputs[0]?.[0];if(!channel)return true;
@@ -19,4 +19,4 @@ class LunaMicProcessor extends AudioWorkletProcessor {
     return true;
   }
 }
-registerProcessor('luna-mic',LunaMicProcessor);
+registerProcessor('plato-mic',PlatoMicProcessor);

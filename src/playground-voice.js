@@ -1,4 +1,4 @@
-// Adapts the existing Luna interface to one fresh, context-free voice session.
+// Adapts the existing Plato interface to one fresh, context-free voice session.
 // Test/material/mastery/whiteboard data intentionally never enters this client.
 export class LiveVoiceSession {
   constructor(hooks = {}, dependencies = {}) {

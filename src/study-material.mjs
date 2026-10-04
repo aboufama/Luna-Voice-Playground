@@ -6,7 +6,7 @@ export const MAX_PDF_BYTES = 20 * 1024 * 1024;
 export const MAX_PDF_PAGES = 250;
 // One stone per chapter has to stay readable around the rim.
 export const MAX_CHAPTERS = 24;
-// Luna is told about a chapter in a few messages of this size, not the whole book.
+// Plato is told about a chapter in a few messages of this size, not the whole book.
 export const BRIEFING_CHARS = 5000;
 export const BRIEFING_PARTS = 3;
 
@@ -99,7 +99,7 @@ export function materialTitle({ metadata = '', pages = [], name = '' } = {}) {
 
 const pagesOf = chapter => chapter.from === chapter.to ? `page ${chapter.from}` : `pages ${chapter.from}–${chapter.to}`;
 
-/** What Luna is told when a document arrives: its name and chapter titles, nothing more. */
+/** What Plato is told when a document arrives: its name and chapter titles, nothing more. */
 export function outlineBriefing(material) {
   const list = material.chapters.map((chapter, index) => `${index + 1}. ${chapter.title} (${pagesOf(chapter)})`).join('; ');
   return `The person has just handed you a document to study together: "${material.title}", ${material.pageCount} ${material.pageCount === 1 ? 'page' : 'pages'}. `
@@ -109,7 +109,7 @@ export function outlineBriefing(material) {
 }
 
 /**
- * What Luna is told when a chapter is chosen: its text, in a few messages of
+ * What Plato is told when a chapter is chosen: its text, in a few messages of
  * bounded size, and an honest note when it had to be cut short.
  */
 export function chapterBriefing(material, index) {
@@ -131,7 +131,7 @@ export function chapterBriefing(material, index) {
 /** Refuse what cannot be read before any work is done. Returns a message, or '' when the file is fine. */
 export function refusal(file) {
   const name = String(file?.name || '');
-  if (!/\.pdf$/i.test(name) && file?.type !== 'application/pdf') return 'That is not a PDF. Drop a PDF to study it with Luna.';
+  if (!/\.pdf$/i.test(name) && file?.type !== 'application/pdf') return 'That is not a PDF. Drop a PDF to study it with Plato.';
   if (file.size > MAX_PDF_BYTES) return 'That PDF is larger than 20 MB. Split it into smaller files.';
   return '';
 }

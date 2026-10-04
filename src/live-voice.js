@@ -105,7 +105,7 @@ export class LiveVoiceSession {
     if(this.closed||generation!==this.microphoneGeneration){stream.getTracks().forEach(track=>track.stop());void context.close();return false;}
     this.stream=stream;await context.audioWorklet.addModule('/live-mic-worklet.js');
     if(this.closed||generation!==this.microphoneGeneration){stream.getTracks().forEach(track=>track.stop());void context.close();return false;}
-    this.input=context.createMediaStreamSource(stream);this.processor=new AudioWorkletNode(context,'luna-mic',{processorOptions:{chunkSamples:this.continuousPlayback?320:1600}});this.mute=context.createGain();this.mute.gain.value=0;
+    this.input=context.createMediaStreamSource(stream);this.processor=new AudioWorkletNode(context,'plato-mic',{processorOptions:{chunkSamples:this.continuousPlayback?320:1600}});this.mute=context.createGain();this.mute.gain.value=0;
     this.input.connect(this.processor);this.processor.connect(this.mute);this.mute.connect(context.destination);
     this.processor.port.onmessage=({data})=>this.streamMicrophone(data);return true;
   }

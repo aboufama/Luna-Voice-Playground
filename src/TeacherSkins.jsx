@@ -2,7 +2,7 @@ import React, { useEffect, useId, useRef, useState } from 'react';
 import { Check, CircleSlash2, GraduationCap, X } from 'lucide-react';
 import './teacher-skins.css';
 
-const STORAGE_KEY = 'luna-teacher-hat-v1';
+const STORAGE_KEY = 'plato-teacher-hat-v1';
 const HATS = [
   { id: 'none', label: 'None' },
   { id: 'beret', label: 'Beret', crop: [59, 181, 614, 387], width: 174, x: -7, bottom: 112, tilt: -7 },

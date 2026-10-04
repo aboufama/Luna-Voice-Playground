@@ -19,7 +19,7 @@ const TEAL = [34, 142, 154], MINT = [176, 246, 226], GARNET = [178, 66, 62];
  * Three fixed glazes for one stone; nothing here animates. `cool` is the mosaic
  * while it listens: ink blues that deepen toward the rim, with the compass
  * construction and the meander gilded. `bright` is that stone under the tide of
- * a person's voice, and `warm` is the stone lit by Luna's own voice.
+ * a person's voice, and `warm` is the stone lit by Plato's own voice.
  * The page is white, so light is drawn as stronger colour, never as paleness.
  */
 export function stonePigments(tile) {

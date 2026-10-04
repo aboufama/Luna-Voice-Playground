@@ -21,7 +21,7 @@ const TOUCH = window.matchMedia?.('(pointer: coarse)').matches ?? false;
 // The voice session's messages are written for a desk; a phone is tapped, and keeps its permissions elsewhere.
 const say = text => !TOUCH ? text : text.replace(/\bClick\b/g, 'Tap').replace(/\bclick\b/g, 'tap')
   .replace('System Settings > Privacy & Security > Microphone', 'this browser’s settings on your phone');
-const RESTING = TOUCH ? 'Resting. Touch the screen and Luna is back.' : 'Resting. Move the pointer or press a key and Luna is back.';
+const RESTING = TOUCH ? 'Resting. Touch the screen and Plato is back.' : 'Resting. Move the pointer or press a key and Plato is back.';
 const RECONNECTING = 'Lost the connection. Reconnecting…';
 const ENDED = 'The voice connection ended. Click the mosaic to reconnect.';
 const PUT_AWAY = 'The person has put the document away. Do not refer to it again unless they hand you one.';
@@ -34,13 +34,13 @@ function App() {
   const [state, setState] = useState('idle');
   const [subtitle, setSubtitle] = useState('');
   const [error, setError] = useState('');
-  // A document Luna has been handed: its title and chapters, and the chapter being studied.
+  // A document Plato has been handed: its title and chapters, and the chapter being studied.
   const [material, setMaterial] = useState(null);
   const [chapter, setChapter] = useState(-1);
   const [reading, setReading] = useState('');
   const [dragging, setDragging] = useState(false);
   const [intake, setIntake] = useState(null);
-  // Nothing is written at the foot of the page. A name appears for a moment where Luna's words go:
+  // Nothing is written at the foot of the page. A name appears for a moment where Plato's words go:
   // the document's when it has been read, a chapter's when its stone is chosen or pointed at.
   const [named, setNamed] = useState(null);
   const [pointed, setPointed] = useState(-1);
@@ -54,7 +54,7 @@ function App() {
   // Every conversation starts knowing nothing, so a new one is told again.
   const study = useRef({ material: null, chapter: -1 });
 
-  // Luna knows only what she is told here: the chapter list, then the chosen chapter's text.
+  // Plato knows only what the session is told here: the chapter list, then the chosen chapter's text.
   function brief(live) {
     const { material: held, chapter: chosen } = study.current;
     if (!held) return;
@@ -62,7 +62,7 @@ function App() {
     for (const part of chapterBriefing(held, chosen)) live.sendContext(part);
   }
 
-  // Luna is live whenever this page is in view. Nothing here stops her.
+  // Plato is live whenever this page is in view. Nothing here stops the session.
   function connect() {
     if (session.current) return;
     clearTimeout(away.current.timer);
@@ -225,8 +225,8 @@ function App() {
   }, []);
 
   const live = state === 'listening' || state === 'speaking';
-  const label = state === 'speaking' ? 'Luna is speaking' : state === 'listening' ? 'Luna is listening'
-    : state === 'connecting' ? 'Connecting to Luna' : 'Start voice session';
+  const label = state === 'speaking' ? 'Plato is speaking' : state === 'listening' ? 'Plato is listening'
+    : state === 'connecting' ? 'Connecting to Plato' : 'Start voice session';
   // A file chosen from the picker comes up from the foot of the page, as a dropped one comes from where it was let go.
   const picked = event => {
     const file = event.target.files?.[0], bounds = screen.current.getBoundingClientRect();
@@ -240,7 +240,7 @@ function App() {
         dragging={dragging} dragPositionRef={held} intake={intake} onIntakeDone={() => setIntake(null)}
         chapters={material?.chapters.length || 0} chapter={chapter} chapterRef={pegs} onChapterPoint={setPointed} reading={Boolean(reading)}/>
       <div className="voice-stage">
-        {/* Only a mosaic that is not live can be pressed, and pressing it can only start Luna. */}
+        {/* Only a mosaic that is not live can be pressed, and pressing it can only start Plato. */}
         {live || state === 'connecting'
           ? <div ref={orb} className="orb-button is-live" role="img" aria-label={label}/>
           : <button ref={orb} className="orb-button" onClick={connect} aria-label={label}/>}
@@ -252,7 +252,7 @@ function App() {
       </div>
       {/* Nothing is shown here. A keyboard or a screen reader still needs something to land on, and it shows only while a key has it. */}
       <section className="study-keys" aria-label="Study material">
-        <button onClick={() => picker.current?.click()}>Add a PDF to study with Luna</button>
+        <button onClick={() => picker.current?.click()}>Add a PDF to study with Plato</button>
         {material && <>
           {material.chapters.map((item, index) =>
             <button key={`${material.id}-${index}`} aria-pressed={index === chapter} onClick={() => choose(index)}>

@@ -19,8 +19,8 @@ const HEARD_DELAY = 46;
 const HEARD_PERIOD = 330;
 const SPOKEN_DELAY = 40;
 const SPOKEN_PERIOD = 320;
-// Luna's light thins toward the rim, which stays the listener's. A person's
-// tide thins toward the centre, which stays hers: the two voices mirror each other.
+// Plato's light thins toward the rim, which stays the listener's. A person's
+// tide thins toward the centre, which stays Plato’s: the two voices mirror each other.
 const SPOKEN_REACH = .62;
 const SPOKEN_RIPPLE = .4;
 const HEARD_REACH = .72;
@@ -133,16 +133,16 @@ function createChannel(contrast) {
  * its own moment. What looks like the medallion growing is each course
  * stepping outward by its own distance.
  *
- * Colour means Luna is live. The two voices mirror each other. A person's
+ * Colour means Plato is live. The two voices mirror each other. A person's
  * voice enters at the rim as a tide of bright glaze, reaching further in the
  * louder it is, and turns each course as it passes so the mosaic winds like a
- * vortex. Luna's voice leaves the centre as warm glaze and travels outward.
+ * vortex. Plato's voice leaves the centre as warm glaze and travels outward.
  * Lift is the sum of the gaps opened further in, so courses spread apart but
  * never overlap, and a turning course keeps its radius.
  *
- * A document Luna has been handed shows as pegs: one stone of the outermost
+ * A document Plato has been handed shows as pegs: one stone of the outermost
  * course per chapter, clockwise from the top, standing out of the rim whether
- * or not she is live. `pegs` lists those stones so the page can tell which one
+ * or not Plato is live. `pegs` lists those stones so the page can tell which one
  * is under the pointer.
  *
  * `hatch` is { angle, open }: the bearing of a document being brought to the
@@ -274,10 +274,10 @@ export function createMosaicLight(tiles) {
     heard.push(live ? input : null, live && !input && state === 'listening' ? level : 0, now, dt);
     spoken.push(live ? output : null, live && !output && state === 'speaking' ? level : 0, now, dt);
     // No ring is in flight after a pause, so a first word can put its crest
-    // exactly where the sound begins: at the rim for a person, the centre for Luna.
+    // exactly where the sound begins: at the rim for a person, the centre for Plato.
     if (heard.level() < .04) heardQuiet += dt; else { if (heardQuiet >= FRESH_AFTER) heardPhase = Math.PI / 2; heardQuiet = 0; }
     if (spoken.level() < .04) spokenQuiet += dt; else { if (spokenQuiet >= FRESH_AFTER) spokenPhase = Math.PI / 2; spokenQuiet = 0; }
-    // Her own voice in the room must not read as someone answering.
+    // The assistant’s own voice in the room must not read as someone answering.
     const attention = 1 - .7 * spoken.level();
     for (let course = 0; course < COURSE_COUNT; course++) {
       const depth = course / (COURSE_COUNT - 1);
@@ -298,7 +298,7 @@ export function createMosaicLight(tiles) {
       winding[course] = life[course] * attention * HEARD_TWIST * (.5 + 1.2 * Math.pow(1 - depth, 1.2)) * loudnessAt(heard, heardAt[course]);
       leaving[course] = (1 - SPOKEN_REACH * depth) * (1 - SPOKEN_RIPPLE * (1 - crest(departing, 1.5)));
       opening[course] = (1 - SPOKEN_REACH * depth) * (SETTLED + SPOKEN_PARTING * crest(departing, 5));
-      // While it is her turn the very centre stays lit, even between words.
+      // While it is Plato’s turn the very centre stays lit, even between words.
       hearth[course] = speaking * Math.max(0, .56 - depth * 1.3);
     }
     const inhale = .5 - .5 * Math.cos(phase), instant = heardAt[COURSE_COUNT - 1];

@@ -1,7 +1,7 @@
 import { MAX_PDF_PAGES, chaptersFrom, materialTitle, refusal } from './study-material.mjs';
 
 // Reads a PDF entirely in the browser. Nothing is uploaded from here: the text
-// stays in memory until the page decides what, if anything, Luna is told.
+// stays in memory until the page decides what, if anything, Plato is told.
 
 /** One page as text, plus each line with the size it is set in. */
 async function readPage(page) {

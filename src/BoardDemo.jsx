@@ -27,7 +27,7 @@ function BoardDemo(){
   return <div className="board-demo">
     <a className="demo-skip" href="#demo-controls">Skip to demo controls</a>
     <header className="demo-header">
-      <a href="/" className="demo-brand" aria-label="Luna home"><span className="demo-logo"><span/></span><strong>luna</strong><span className="demo-brand-divider"/><span>Whiteboard playground</span></a>
+      <a href="/" className="demo-brand" aria-label="Plato home"><span className="demo-logo"><span/></span><strong>plato</strong><span className="demo-brand-divider"/><span>Whiteboard playground</span></a>
       <a className="demo-live-link" href="/">Open live tutor <ArrowRight size={16}/></a>
     </header>
     <main>
@@ -50,7 +50,7 @@ function BoardDemo(){
           </div>
         </section>
         <aside className="demo-side">
-          <section className="demo-context-card"><div className="demo-section-title"><MessageCircle size={17}/><h2>The teaching moment</h2><span>Scripted</span></div><div className="demo-dialogue"><p className="demo-speaker">Student</p><p className="demo-student">{example.prompt}</p><p className="demo-speaker demo-tutor-label"><span className="demo-mini-orb"/>Luna</p><p className="demo-tutor">{updated?example.updateReply:example.reply}</p></div><div className="demo-try"><span>Try this</span><p>Follow the next step, add a teaching note, or hide and reopen the same scene.</p></div></section>
+          <section className="demo-context-card"><div className="demo-section-title"><MessageCircle size={17}/><h2>The teaching moment</h2><span>Scripted</span></div><div className="demo-dialogue"><p className="demo-speaker">Student</p><p className="demo-student">{example.prompt}</p><p className="demo-speaker demo-tutor-label"><span className="demo-mini-orb"/>Plato</p><p className="demo-tutor">{updated?example.updateReply:example.reply}</p></div><div className="demo-try"><span>Try this</span><p>Follow the next step, add a teaching note, or hide and reopen the same scene.</p></div></section>
           <section className="demo-selection-card" aria-labelledby="example-state-title"><div className="demo-section-title"><BookOpen size={17}/><h2 id="example-state-title">Current example</h2></div><p className="demo-selection-empty">{example.title}</p><p className="demo-selection-help">{updated?'The next teaching step is shown.':'The initial problem is shown.'} {annotated?'A teaching note is included.':''} These are scripted examples; nothing is graded here.</p></section>
           <button className="demo-next" onClick={()=>load(subjectId,1-exampleIndex)}><span><small>Another angle</small><strong>{subject.examples[1-exampleIndex].title}</strong></span><ChevronRight size={20}/></button>
         </aside>

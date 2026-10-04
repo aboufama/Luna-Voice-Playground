@@ -1,6 +1,6 @@
 /* The original mosaic talk screen fills the space formerly used by app chrome. */
 .mosaic-only .study-screen{height:100svh}
-/* A live mosaic is Luna listening, not a control: nothing to press. */
+/* A live mosaic is Plato listening, not a control: nothing to press. */
 .orb-button.is-live{cursor:default}
 /* Nothing about the mosaic is ever scaled, not even its unseen press target. */
 .mosaic-only .orb-button:active:not(:disabled){transform:none}

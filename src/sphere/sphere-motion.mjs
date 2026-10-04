@@ -27,11 +27,11 @@ export const TURN_TICKS = 3;
 const HAND = 2;
 // The person's voice works the rings at the outline in pairs, one pair to each two bands of the spectrum.
 const TERRACES = 8;
-// Luna's voice turns stones to her colour ring by ring from the pole, this far over the surface at full
+// Plato's voice turns stones to its colour ring by ring from the pole, this far over the surface at full
 // voice: up to the clock's ring, which stays the edge of the drawing. An ordinary speaking level already
-// reaches most of the way, so her turn is plain to see.
-const LUNA_REACH = 150;
-const LUNA_GAIN = 1.5;
+// reaches most of the way, so its turn is plain to see.
+const PLATO_REACH = 150;
+const PLATO_GAIN = 1.5;
 // A document is not a part of the machine, and nothing about taking one in runs on the tick: its stones
 // fall, the shell opens, and what is swallowed spreads, each as such things do.
 //
@@ -68,7 +68,7 @@ const BEYOND = 280;
 // Each chapter of a document is one stone standing this many notches up; the chosen one stands this many.
 const PEG_UP = 2, PEG_CHOSEN = 4;
 // The sphere's attitude has stops too: at rest a little off square, tipped towards a person who is
-// speaking, lifted a little when Luna speaks, and turned one stop towards a pointer.
+// speaking, lifted a little when Plato speaks, and turned one stop towards a pointer.
 const REST_YAW = -.09, REST_PITCH = -.05, LISTEN = .1, SPEAK = -.045, GAZE_YAW = .12, GAZE_PITCH = .08;
 
 /**
@@ -156,7 +156,7 @@ function createVoice(contrast) {
  *                  that the stones turn over to colour in a cascade.
  *   quiet          a clock: one ring outside the drawing steps one place a
  *                  second, carrying one raised stone round as its hand.
- *   Luna           her stones turn to her colour ring by ring from the pole,
+ *   Plato          its stones turn to its colour ring by ring from the pole,
  *                  one ring to each step of loudness, and each syllable
  *                  ratchets those rings one place and back.
  *   a person       the rings at the outline turn to their colour and stand up
@@ -172,7 +172,7 @@ function createVoice(contrast) {
  *                  the crack outward every stone turns to the page's stone and
  *                  back. Last, one stone to a chapter turns to the page's stone
  *                  for good and stands up on its own ring, clockwise from the
- *                  top; the chosen one turns to Luna's colour and stands higher.
+ *                  top; the chosen one turns to Plato's colour and stands higher.
  *
  * `tiles`, `sway`, `dial` and `shell` are all the renderer is given.
  */
@@ -185,8 +185,8 @@ export function createSphereMotion(field) {
   const shell = { carried: new Float32Array(sockets.count * CELL_STRIDE), changed: 0 };
   for (let socket = 0; socket < sockets.count; socket++) shell.carried[socket * CELL_STRIDE + 3] = 1;
   const courseAt = arc => courseArc.reduce((best, at, k) => Math.abs(at - arc) < Math.abs(courseArc[best] - arc) ? k : best, 0);
-  // The last ring a viewer can see, the rings Luna can reach, and the clock's ring just outside the drawing.
-  const LIMB = courseAt(Math.PI * radius / 2 - PITCH / 2), LUNA = courseAt(LUNA_REACH), CLOCK = courseAt(FACE_ARC + 1.5 * PITCH), KNOCK = LIMB - 2 * TERRACES;
+  // The last ring a viewer can see, the rings Plato can reach, and the clock's ring just outside the drawing.
+  const LIMB = courseAt(Math.PI * radius / 2 - PITCH / 2), PLATO = courseAt(PLATO_REACH), CLOCK = courseAt(FACE_ARC + 1.5 * PITCH), KNOCK = LIMB - 2 * TERRACES;
   // The ring the chapters' stones stand on: on the face, clear of the clock.
   const PEGS = CLOCK + 3;
   const lag = k => Math.floor(Math.min(k, LIMB + 8) / 3), lagOut = k => k <= LIMB ? (LIMB - k) >> 1 : 0;
@@ -380,7 +380,7 @@ export function createSphereMotion(field) {
   // One tick of the machine: decide what every part should be doing and start whatever is free to start.
   function onTick(t) {
     const live = mode === 'listening' || mode === 'speaking', present = live && hearing > .08;
-    // Her turn is told by her sound, not by the provider's mode, which flickers between her words.
+    // The speaking turn is told by the sound, not by the provider's mode, which flickers between words.
     const speaking = live && spoken.level() > .1;
     if (live && !wasLive) { liveTick = t; clock = 0; seek.fill(0); }
     if (!live && wasLive) leaveTick = t;
@@ -389,8 +389,8 @@ export function createSphereMotion(field) {
     wasLive = live;
     attentive = present ? 10 : Math.max(0, attentive - 1);
 
-    // Luna: loudness is a number of rings. The front moves one ring a tick; a syllable is a click of the ratchet.
-    const aim = speaking ? Math.max(3, Math.round(Math.min(1, spoken.level() * LUNA_GAIN) * LUNA)) : 0;
+    // Plato: loudness is a number of rings. The front moves one ring a tick; a syllable is a click of the ratchet.
+    const aim = speaking ? Math.max(3, Math.round(Math.min(1, spoken.level() * PLATO_GAIN) * PLATO)) : 0;
     if (aim > reach) { reach++; reachLow = 0; } else if (aim < reach) { if (!speaking || ++reachLow >= 2) reach--; } else reachLow = 0;
     for (let k = 0; k < COURSES; k++) ratchet[k] = k >= reach || k === 0 ? 0 : spokenClick && speaking ? (ratchet[k] ? 0 : k & 1 ? -1 : 1) : ratchet[k];
     spokenClick = false;
@@ -457,7 +457,7 @@ export function createSphereMotion(field) {
         rippling[index] = 1; busy[k]++; continue;
       }
       // A chapter's stone keeps the page's stone once the ripple has reached it; the chosen chapter's shows
-      // Luna's colour instead. Otherwise a stone shows what its ring is showing.
+      // Plato's colour instead. Otherwise a stone shows what its ring is showing.
       const reached = spreadTick < 0 || t >= spreadAt[index];
       const wish = peg >= 0 && marking && reached ? (peg === chosen && live ? WARM : PAGE) : want[k];
       if ((parity[index] ? sideB[index] : sideA[index]) === wish) continue;
@@ -526,10 +526,10 @@ export function createSphereMotion(field) {
     for (let k = 0; k < COURSES; k++) {
       steps[k] = wanted[k] = live ? 0 : home[k]; dialFrom[k] = dialTo[k] = steps[k] * pitch[k]; dialTick[k] = pinTick[k] = wantTick[k] = -99;
       pin[k] = 0; pinFrom[k] = pinTo[k] = 0;
-      want[k] = !live ? GREY : mode === 'speaking' && k < Math.round(LUNA * .6) ? WARM : LIVE;
+      want[k] = !live ? GREY : mode === 'speaking' && k < Math.round(PLATO * .6) ? WARM : LIVE;
     }
     for (let index = 0; index < count; index++) { sideA[index] = want[course[index]]; sideB[index] = GREY; parity[index] = 0; turnTick[index] = -1; }
-    // The chapters' stones are already standing in the page's stone, the chosen one in Luna's colour.
+    // The chapters' stones are already standing in the page's stone, the chosen one in Plato's colour.
     pegStones.forEach((stone, peg) => {
       sideA[stone] = peg === chosen && live ? WARM : PAGE;
       pegNow[peg] = peg === chosen ? PEG_CHOSEN : PEG_UP; pegFrom[peg] = pegTo[peg] = pegNow[peg] * NOTCH; pegTick[peg] = -99;
@@ -694,7 +694,7 @@ export function createSphereMotion(field) {
     const live = state === 'listening' || state === 'speaking';
     heard.push(live ? input : null, live && !input && state === 'listening' ? level : 0, now, dt);
     spoken.push(live ? output : null, live && !output && state === 'speaking' ? level : 0, now, dt);
-    // Her own voice in the room must not read as someone answering.
+    // The assistant’s own voice in the room must not read as someone answering.
     mine = 1 - .85 * spoken.level(); hearing = heard.level() * mine;
     // A syllable is held until the next tick takes it.
     if (heard.onset()) heardClick = true;
@@ -713,7 +713,7 @@ export function createSphereMotion(field) {
     step, tiles, sway, dial, shell,
     // For the tests: every stone's turn, height above its seat and outward side; every ring's stop and piston; and the named parts.
     angle, height, shown, sideA, sideB, steps, pin, want, pitch, home, peeled,
-    parts: { limb: LIMB, luna: LUNA, clock: CLOCK, knock: KNOCK, hand, terraceOf, pegs: PEGS },
+    parts: { limb: LIMB, plato: PLATO, clock: CLOCK, knock: KNOCK, hand, terraceOf, pegs: PEGS },
     tick: () => done,
     // The stone standing for each chapter; the crack, while there is one; where the sheet is; and the last document swallowed.
     pegs: () => pegStones,

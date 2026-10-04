@@ -114,7 +114,7 @@ test('assistant captions are bounded; user speech and interruptions clear stale 
   const h = fixture();
   await h.session.start();
   h.session.setCaptionMaxChars(40);
-  const message = 'Here is a long spoken sentence from Luna that should fit the original caption area.';
+  const message = 'Here is a long spoken sentence from Plato that should fit the original caption area.';
   h.options[0].onMessage({ message, role: 'agent', event_id: 42 });
   assert.equal(h.captions.at(-1).text, message);
   assert.ok(h.captions.at(-1).phrase.length <= 40);
@@ -254,7 +254,7 @@ test('the mosaic reads both voices as a few voice bands, and nothing when discon
   assert.equal(h.session.readSpectrum(heard, spoken), false);
 });
 
-test('a document reaches Luna only through sendContext, and only while a conversation is live', async () => {
+test('a document reaches Plato only through sendContext, and only while a conversation is live', async () => {
   const h = fixture();
   assert.equal(h.session.sendContext('Chapter list'), false, 'nothing is live yet');
   await h.session.start();

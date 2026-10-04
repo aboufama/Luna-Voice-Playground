@@ -104,7 +104,7 @@ function Preview() {
     return () => cancelAnimationFrame(animation);
   }, []);
   return <main>
-    <header><a className="wordmark" href="/">luna<span> / presence studies</span></a><span className="study-note">Same 1,010 stones. Always full size.</span></header>
+    <header><a className="wordmark" href="/">plato<span> / presence studies</span></a><span className="study-note">Same 1,010 stones. Always full size.</span></header>
     <div className="controls">
       <div className="segmented" aria-label="Presence design">{modes.map((name, index) => <button key={name} aria-pressed={mode === index} onClick={() => setMode(index)}>{name}</button>)}</div>
       <div className="secondary-controls"><div className="segmented small" aria-label="Whiteboard example">{['Diagram', 'Equation'].map(name => <button key={name} aria-pressed={fixture === name} onClick={() => setFixture(name)}>{name}</button>)}</div><button className="voice-button" aria-pressed={speaking} onClick={() => setSpeaking(!speaking)}><span className={speaking ? 'status-dot active' : 'status-dot'} />{speaking ? 'Speaking' : 'Listening'}</button></div>

@@ -14,6 +14,6 @@ export default function HintButton({state,voiceState,onRequest}){
   return <span className="hint-control">
     <button type="button" className={`dock-button hint-button ${view.suggested?'is-suggested':''}`} aria-label="Request hint" aria-describedby={descriptionId} title={view.description} disabled={!view.available} onClick={onRequest}><Lightbulb size={17}/><span className="hint-label">Hint</span>{state?.questionId&&<span className="hint-count" aria-hidden="true">{view.seconds?`${view.seconds}s`:view.remaining}</span>}</button>
     <span id={descriptionId} className="hint-sr-only">{view.description}</span>
-    <span className="hint-sr-only" role="status">{view.suggested?'Luna suggests a hint. Use the Hint button when you are ready.':''}</span>
+    <span className="hint-sr-only" role="status">{view.suggested?'Plato suggests a hint. Use the Hint button when you are ready.':''}</span>
   </span>;
 }

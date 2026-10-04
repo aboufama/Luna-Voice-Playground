@@ -1,6 +1,6 @@
 import { createMosaicField } from '../mosaic-field.mjs';
 
-// Reuse Luna's hand-cut material, but let the SUBJECT define the silhouette.
+// Reuse Plato's hand-cut material, but let the SUBJECT define the silhouette.
 // The voice tutor remains circular; course artwork has its own tile positions.
 export const COURSE_FIELD = createMosaicField();
 export const ART_SIZE = 360;
@@ -93,7 +93,7 @@ export function createCourseTiles(course, monochrome = false) {
     let base = blend(foundation, accent, clamp(accentMix * .90 + rim));
     base = blend(base, ink, clamp(inkMix * (.9 + tile.seed * .1)));
     // Soft, weathered mineral pigment: keep the subject readable while giving
-    // the colorful courses the same quiet presence as Luna's neutral stone.
+    // the colorful courses the same quiet presence as Plato's neutral stone.
     if (shaped) {
       const luma = base[0] * .2126 + base[1] * .7152 + base[2] * .0722;
       base = blend(base, [luma + 1, luma, luma - 2], .30);
@@ -202,5 +202,5 @@ export function courseSVG(course, monochrome = false) {
     surfaces.push(`<path d="${pathData(face)}" fill="url(#g${i})"/>`);
     groups.push(`<g id="${tile.id}" transform="translate(${(ART_SIZE / 2 + tile.x).toFixed(3)} ${(ART_SIZE / 2 + tile.y).toFixed(3)})" opacity="${tile.alpha.toFixed(4)}">${surfaces.join('')}</g>`);
   });
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1440" viewBox="0 0 ${ART_SIZE} ${ART_SIZE}" role="img" aria-labelledby="title desc"><title id="title">${escapeXML(course.name)} — Luna course mosaic</title><desc id="desc">${escapeXML(course.description)} ${tiles.length} hand-cut tesserae in mineral pigments.</desc><defs>${defs.join('')}</defs>${groups.join('')}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1440" viewBox="0 0 ${ART_SIZE} ${ART_SIZE}" role="img" aria-labelledby="title desc"><title id="title">${escapeXML(course.name)} — Plato course mosaic</title><desc id="desc">${escapeXML(course.description)} ${tiles.length} hand-cut tesserae in mineral pigments.</desc><defs>${defs.join('')}</defs>${groups.join('')}</svg>`;
 }

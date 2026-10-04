@@ -34,7 +34,7 @@ const PRESS = matchMedia('(pointer: coarse)').matches ? 26 : 16;
 
 let cut = null;
 
-// Luna's mosaic as a sphere of rigid tiles. Same props, place and size as the
+// Plato's mosaic as a sphere of rigid tiles. Same props, place and size as the
 // flat VoiceCanvas, which it falls back to where WebGL2 is unavailable.
 export default function SphereCanvas(props) {
   const { state, levelRef, audioRef, dragging = false, dragPositionRef, intake = null, onIntakeDone, chapters = 0, chapter = -1, chapterRef, onChapterPoint, reading = false } = props;

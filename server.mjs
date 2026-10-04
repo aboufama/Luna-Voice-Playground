@@ -112,7 +112,7 @@ function upstreamError(status, payload) {
     return [429, 'rate_limited', 'ElevenLabs temporarily rate limited this request. Wait a moment, then try starting again.'];
   }
   if (status === 401) return [502, 'provider_auth', 'ElevenLabs rejected the server API key. Check the key in this project’s .env file.'];
-  if (status === 403 || status === 404) return [503, 'agent_unavailable', 'The Luna voice agent is unavailable. Check agent access for the server API key.'];
+  if (status === 403 || status === 404) return [503, 'agent_unavailable', 'The Plato voice agent is unavailable. Check agent access for the server API key.'];
   return [502, 'provider_error', 'ElevenLabs could not start the voice session. Try starting again.'];
 }
 

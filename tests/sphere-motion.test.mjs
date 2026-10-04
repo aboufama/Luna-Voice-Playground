@@ -12,7 +12,7 @@ const silence = new Float32Array(BANDS);
 const speech = level => time => voice(time % 260 < 170 ? level : level * .45);
 const quiet = { state: 'listening', input: silence, output: silence };
 const person = level => time => ({ state: 'listening', input: speech(level)(time), output: silence });
-const luna = level => time => ({ state: 'speaking', input: silence, output: speech(level)(time) });
+const plato = level => time => ({ state: 'speaking', input: silence, output: speech(level)(time) });
 
 // One sphere and a clock to run it by. `watch` is called after every frame.
 function machine() {
@@ -93,7 +93,7 @@ test('a stone turns over only once it has lifted clear of its socket, and seats 
   };
   run(900, { state: 'thinking' }, check);
   run(2600, quiet, check);
-  run(1500, luna(.6), check);
+  run(1500, plato(.6), check);
   run(1500, person(.7), check);
   run(1500, { state: 'idle' }, check);
   assert.ok(turns > 20_000, 'the check only means something if stones really turned');
@@ -123,7 +123,7 @@ test('nothing changes colour in place: what a stone shows changes only as it tur
   before.set(motion.shown); facing.fill(1);
   run(900, { state: 'thinking' }, watch);
   run(2600, quiet, watch);
-  run(1800, luna(.6), watch);
+  run(1800, plato(.6), watch);
   run(900, quiet, watch);
   run(1800, person(.7), watch);
   run(2600, quiet, watch);
@@ -146,34 +146,34 @@ test('quiet is a clock: one ring steps one place a second and carries one raised
   motion.dial.forEach((angle, ring) => { if (ring !== clock) assert.equal(angle, 0); });
 });
 
-test('Luna speaking: stones turn to her colour ring by ring from the pole, and each syllable clicks those rings a place', () => {
+test('Plato speaking: stones turn to its colour ring by ring from the pole, and each syllable clicks those rings a place', () => {
   const { motion, run, showing, live } = machine();
   live();
   const reached = [], clicked = new Set();
-  run(2600, luna(.6), time => {
-    reached.push([time, showing(WARM, ring => ring <= 2), showing(WARM, ring => ring >= 9 && ring < motion.parts.luna)]);
+  run(2600, plato(.6), time => {
+    reached.push([time, showing(WARM, ring => ring <= 2), showing(WARM, ring => ring >= 9 && ring < motion.parts.plato)]);
     motion.steps.forEach((place, ring) => { if (ring !== motion.parts.clock && place !== 0) clicked.add(ring); });
     for (let index = 0; index < field.count; index += 5) assert.ok(motion.shown[index] !== GREEN, 'the green stone is the person\'s');
   });
   const first = column => reached.find(row => row[column] > 0)?.[0];
   assert.ok(first(1) + 250 < first(2), 'the pole turns first and the front moves outward');
-  assert.ok(showing(WARM) > 400, `her colour reaches a good part of the face: ${showing(WARM)} stones`);
-  assert.equal(showing(WARM, ring => ring >= motion.parts.luna), 0, 'and stops inside the clock\'s ring, at the edge of the drawing');
-  assert.ok(clicked.size >= 3 && [...clicked].every(ring => ring < motion.parts.luna));
+  assert.ok(showing(WARM) > 400, `its colour reaches a good part of the face: ${showing(WARM)} stones`);
+  assert.equal(showing(WARM, ring => ring >= motion.parts.plato), 0, 'and stops inside the clock\'s ring, at the edge of the drawing');
+  assert.ok(clicked.size >= 3 && [...clicked].every(ring => ring < motion.parts.plato));
   run(2600, quiet);
   assert.equal(showing(WARM), 0);
   motion.steps.forEach((place, ring) => { if (ring !== motion.parts.clock) assert.equal(place, 0); });
 });
 
-test('her turn is told by her sound, not by the provider\'s mode, which flickers between her words', () => {
+test('the speaking turn is told by the sound, not by the provider\'s mode, which flickers between words', () => {
   const { motion, run, showing, live } = machine();
   live();
   run(2400, time => ({ state: time % 700 < 420 ? 'speaking' : 'listening', input: silence, output: speech(.55)(time) }));
   assert.ok(showing(WARM) > 300, `${showing(WARM)} stones`);
 });
 
-test('a louder voice is more steps: Luna reaches more rings, a person stands their rings more notches up', () => {
-  const warm = level => { const { run, showing, live } = machine(); live(); run(2600, luna(level)); return showing(WARM); };
+test('a louder voice is more steps: Plato reaches more rings, a person stands their rings more notches up', () => {
+  const warm = level => { const { run, showing, live } = machine(); live(); run(2600, plato(level)); return showing(WARM); };
   assert.ok(warm(.6) > warm(.3) * 1.5 && warm(.3) > 0);
   // Measured against the speaker's own loudest: teach it that first, let the softer voice settle, then look.
   const stood = level => {
@@ -200,11 +200,11 @@ test('a person speaking: the rings at the outline turn green and stand up as pis
     // A knock is an inner ring, still in its own colour, standing one notch up for a tick.
     for (let index = 0; index < field.count; index += 2) {
       if (field.course[index] <= knock && field.course[index] > 0 && motion.shown[index] === LIVE && !turning(motion, index) && motion.height[index] > NOTCH * .5 && index !== motion.parts.hand) knocked++;
-      assert.ok(motion.shown[index] !== WARM, 'the warm stone is Luna\'s');
+      assert.ok(motion.shown[index] !== WARM, 'the warm stone is Plato\'s');
     }
   });
   assert.ok(first !== null && showing(GREEN) > 800, `${showing(GREEN)} green stones`);
-  assert.equal(showing(GREEN, ring => ring <= knock), 0, 'the centre stays Luna\'s');
+  assert.equal(showing(GREEN, ring => ring <= knock), 0, 'the centre stays Plato\'s');
   assert.ok(showing(GREEN, ring => ring > knock && ring <= limb + 3) === showing(GREEN));
   assert.ok(knocked > 100, 'syllables travelled inward as knocks');
   run(3000, quiet);
@@ -212,7 +212,7 @@ test('a person speaking: the rings at the outline turn green and stand up as pis
   assert.equal(showing(LIVE), field.count);
 });
 
-test('her own voice in the room does not read as someone answering, and room noise does not move the machine', () => {
+test('the assistant’s own voice in the room does not read as someone answering, and room noise does not move the machine', () => {
   const echo = machine();
   echo.live();
   echo.run(2200, time => ({ state: 'speaking', input: voice(.3), output: speech(.6)(time) }));
@@ -225,10 +225,10 @@ test('her own voice in the room does not read as someone answering, and room noi
 });
 
 test('without a spectrum the plain level still works both mechanisms', () => {
-  const hers = machine();
-  hers.live();
-  hers.run(2200, { state: 'speaking', level: .4 });
-  assert.ok(hers.showing(WARM) > 100);
+  const speaker = machine();
+  speaker.live();
+  speaker.run(2200, { state: 'speaking', level: .4 });
+  assert.ok(speaker.showing(WARM) > 100);
   const theirs = machine();
   theirs.live();
   theirs.run(2200, { state: 'listening', level: .4 });
@@ -238,7 +238,7 @@ test('without a spectrum the plain level still works both mechanisms', () => {
 test('leaving live turns the sphere back to stone and its rings back out of register', () => {
   const { motion, run, showing, live } = machine();
   live();
-  run(1200, luna(.6));
+  run(1200, plato(.6));
   run(4200, { state: 'idle' });
   assert.equal(showing(GREY), field.count);
   assert.deepEqual([...motion.steps], [...motion.home]);
@@ -423,7 +423,7 @@ test('dropped, every stone of the sheet starts for the opening at once and gathe
   assert.ok(still.taken() === 'reader' && whole(still));
 });
 
-test('each chapter is one stone in the page\'s stone standing on its own ring, clockwise from the top; the chosen one turns to her colour and stands higher', () => {
+test('each chapter is one stone in the page\'s stone standing on its own ring, clockwise from the top; the chosen one turns to its colour and stands higher', () => {
   const { motion, run, live } = machine();
   live();
   assert.equal(motion.pegs().length, 0);
@@ -437,7 +437,7 @@ test('each chapter is one stone in the page\'s stone standing on its own ring, c
     assert.ok(Math.abs(motion.height[stone] - 2 * NOTCH) < 1e-4 && motion.shown[stone] === PAGE);
   });
   assert.ok(risen.every((time, peg) => peg === 0 || time > risen[peg - 1]), 'they stand up one after another, round the ring');
-  // Choosing: the stone seats, turns over to Luna's colour out of its socket, and stands higher. The others do not move.
+  // Choosing: the stone seats, turns over to Plato's colour out of its socket, and stands higher. The others do not move.
   run(1500, { ...quiet, chapters: 6, chapter: 2 });
   pegs.forEach((stone, peg) => {
     assert.ok(Math.abs(motion.height[stone] - (peg === 2 ? 4 : 2) * NOTCH) < 1e-4);

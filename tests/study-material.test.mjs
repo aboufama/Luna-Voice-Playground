@@ -51,7 +51,7 @@ test('the title is the document\'s own, else its biggest first line, else a tidi
   assert.equal(materialTitle({}), 'Untitled document');
 });
 
-test('Luna is first told only the chapter list, then the chosen chapter in bounded parts', () => {
+test('Plato is first told only the chapter list, then the chosen chapter in bounded parts', () => {
   const material = { title: 'Cell Biology', pageCount: 5, chapters: [
     { title: 'Membranes', from: 1, to: 3, text: 'A membrane is a bilayer.' },
     { title: 'Organelles', from: 4, to: 4, text: '§'.repeat(BRIEFING_CHARS * BRIEFING_PARTS + 4321) },
@@ -70,7 +70,7 @@ test('Luna is first told only the chapter list, then the chosen chapter in bound
   const parts = chapterBriefing(material, 1);
   assert.equal(parts.length, BRIEFING_PARTS);
   assert.ok(parts.every(part => part.length < BRIEFING_CHARS + 400), 'each message stays small enough to send');
-  assert.match(parts[0], /only the first 15,000 of its 19,321 characters/, 'she is told plainly that it was cut short');
+  assert.match(parts[0], /only the first 15,000 of its 19,321 characters/, 'Plato is told plainly that it was cut short');
   assert.match(parts[2], /Part 3 of 3/);
   assert.equal(parts.join('').split('§').length - 1, BRIEFING_CHARS * BRIEFING_PARTS);
 
@@ -95,7 +95,7 @@ test('each chapter stands out of the rim as one stone, clockwise from the top, a
   assert.equal(light.pegs.length, 0);
   assert.ok(light.lift.every(value => value === 0));
 
-  // A document is there whether or not Luna is live: the pegs come out of plain stone.
+  // A document is there whether or not Plato is live: the pegs come out of plain stone.
   run(4, { chapters: 6 });
   assert.equal(new Set(light.pegs).size, 6, 'six different stones');
   assert.ok(light.pegs.every(stone => Math.hypot(tiles[stone].x, tiles[stone].y) > 138), 'all on the outermost course, with nothing beyond to hit');
@@ -105,7 +105,7 @@ test('each chapter stands out of the rim as one stone, clockwise from the top, a
   places.forEach((place, peg) => assert.ok(Math.abs(place - peg / 6 * Math.PI * 2) < .12, `peg ${peg} near its sixth of the rim`));
   assert.ok(light.pegs.every(stone => Math.abs(light.lift[stone] - 7) < .05), 'each at the same stop');
   assert.equal(light.lift.filter(value => value > 0).length, 6, 'and no other stone moves');
-  assert.ok(light.pegs.every(stone => light.ink[stone] > .5 && light.cool[stone] === 0 && light.warm[stone] === 0), 'seen, but still stone while Luna is away');
+  assert.ok(light.pegs.every(stone => light.ink[stone] > .5 && light.cool[stone] === 0 && light.warm[stone] === 0), 'seen, but still stone while Plato is away');
 
   run(40, { state: 'listening', chapters: 6, chapter: 2, pointed: 4 });
   const [plain, chosen, pointed] = [0, 2, 4].map(peg => light.pegs[peg]);

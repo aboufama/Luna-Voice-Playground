@@ -3,7 +3,7 @@ import { Conversation } from '@elevenlabs/client';
 // Load the browser SDK up front so its iOS audio-unlock listener is armed.
 // The UX fork has one fresh ElevenLabs conversation, with no tools. It starts
 // with no study data; the only way any enters is sendContext, when the person
-// hands Luna a document.
+// hands Plato a document.
 // It is live whenever its page is visible: hiding the page releases the
 // microphone, and coming back opens a new conversation without a click.
 // The page's own server hands it a short-lived token for a private agent. A
@@ -264,7 +264,7 @@ export class LiveVoiceSession {
     } finally { this.resuming = false; }
   }
 
-  // The SDK plays Luna through its own hidden audio element. A browser that
+  // The SDK plays Plato through its own hidden audio element. A browser that
   // held it back until the page was touched lets it through on the next touch.
   enableAudio() {
     for (const element of this.deps.document?.querySelectorAll?.('audio') ?? []) {
@@ -272,7 +272,7 @@ export class LiveVoiceSession {
     }
   }
 
-  // Tell Luna something without it counting as the person speaking, and without
+  // Tell Plato something without it counting as the person speaking, and without
   // prompting a reply. False when there is no live conversation to tell.
   sendContext(text) {
     const voice = this.ready ? this.voice : null;
@@ -320,8 +320,8 @@ const needsPerson = (message = '') => /NotAllowed|permission|denied|NotFound|dev
 function turnedAway(message = '') {
   const why = /conversation token for agent \S+\s+(.*)$/is.exec(message)?.[1];
   if (!why) return null;
-  if (/\b429\b|limit|quota|capacity/i.test(why)) return new ConnectionError('Luna is busy right now. Click the mosaic to try again in a while.', false);
-  if (/\b40[134]\b|authentication enabled/i.test(why)) return new ConnectionError('Luna’s voice is not open to this page.', false);
+  if (/\b429\b|limit|quota|capacity/i.test(why)) return new ConnectionError('Plato is busy right now. Click the mosaic to try again in a while.', false);
+  if (/\b40[134]\b|authentication enabled/i.test(why)) return new ConnectionError('Plato’s voice is not open to this page.', false);
   return null;
 }
 

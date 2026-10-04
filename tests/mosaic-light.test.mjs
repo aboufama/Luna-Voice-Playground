@@ -47,7 +47,7 @@ test('going live brings colour out from the centre, then it rests and breathes',
   assert.ok(light.cool.some(value => value > .98) && light.cool.some(value => value < .4) && light.cool.every(value => value > .3));
 });
 
-test('a person talking enters at the rim as a tide; the centre stays Luna\'s', () => {
+test('a person talking enters at the rim as a tide; the centre stays Plato\'s', () => {
   const light = createMosaicLight(tiles);
   run(light, 60, { state: 'listening', input: silence, output: silence });
   const seen = run(light, 45, { state: 'listening', input: voice(.75), output: silence },
@@ -62,7 +62,7 @@ test('a person talking enters at the rim as a tide; the centre stays Luna\'s', (
   assert.ok(seen[2][5] > 2, 'every course steps out with the first syllable');
   assert.ok(mean(light.lift, rim) > 6, 'and the rim ends up furthest out');
   assert.ok(mean(light.lift, centre) < mean(light.lift, rim) / 4);
-  assert.ok(mean(light.warm, rim) < .02, 'a person is never shown in Luna\'s colour');
+  assert.ok(mean(light.warm, rim) < .02, 'a person is never shown in Plato\'s colour');
   run(light, 60, { state: 'listening', input: silence, output: silence }, null, 105 * 33);
   assert.ok(mean(light.lift, rim) < 2 && mean(light.cool, centre) < .85 && light.bright.every(value => value < .02), 'and settles when they stop');
 });
@@ -101,23 +101,23 @@ test('a person\'s voice winds the courses like a vortex, each one a rigid ring',
   assert.ok(wound[2] < .3, 'but never far enough to swing a stone\'s light around');
   run(light, 60, { state: 'listening', input: silence, output: silence }, null, 105 * 33);
   assert.ok(light.turn.every(value => Math.abs(value) < .005), 'it unwinds when they stop');
-  // Luna's own dials belong to the choreography; her voice adds no winding here.
+  // Plato's own dials belong to the choreography; its voice adds no winding here.
   run(light, 40, { state: 'speaking', input: silence, output: voice(.75) }, null, 165 * 33);
   assert.ok(light.turn.every(value => Math.abs(value) < .005));
 });
 
-test('Luna speaking leaves the centre first, in her own colour', () => {
+test('Plato speaking leaves the centre first, in its own colour', () => {
   const light = createMosaicLight(tiles);
   run(light, 60, { state: 'listening', input: silence, output: silence });
   const seen = run(light, 40, { state: 'speaking', input: silence, output: voice(.75) },
     () => [mean(light.warm, centre), mean(light.warm, middle), mean(light.warm, rim)], 60 * 33);
   const arrival = (column, level) => seen.findIndex(row => row[column] > level);
   assert.ok(arrival(0, .6) >= 0 && arrival(0, .6) <= 6);
-  assert.ok(arrival(1, .4) > arrival(0, .6) + 5, 'her voice travels outward');
+  assert.ok(arrival(1, .4) > arrival(0, .6) + 5, 'its voice travels outward');
   const settled = seen.slice(25), average = column => settled.reduce((sum, row) => sum + row[column], 0) / settled.length;
   assert.ok(average(0) > .9 && average(1) < average(0) - .15 && average(2) < average(1) - .15, 'and thins toward the rim, which stays the listener\'s');
   assert.ok(light.bright.every(value => value === 0), 'the bright tide belongs to the person');
-  // Between her words the very centre stays lit, so her turn never looks like silence.
+  // Between words the very centre stays lit, so its turn never looks like silence.
   const pause = run(light, 40, { state: 'speaking', input: silence, output: silence }, () => mean(light.warm, centre), 100 * 33);
   assert.ok(pause.at(-1) > .2);
 });

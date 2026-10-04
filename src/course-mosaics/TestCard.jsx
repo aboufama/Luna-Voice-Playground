@@ -8,7 +8,7 @@ import './test-cards.css';
 
 const courses = new Map(COURSES.map(course => [course.id, course]));
 const neutral = {
-  id: 'unassigned', name: 'Luna', description: 'A small stack of study pages in quiet mineral stone.',
+  id: 'unassigned', name: 'Plato', description: 'A small stack of study pages in quiet mineral stone.',
   palette: { ink: '#97988e', accent: '#b9baaf', stone: '#d8d9d1' },
   silhouette: [
     { fill: true, points: [{ x: -62, y: -88 }, { x: 60, y: -88 }, { x: 60, y: 64 }, { x: -62, y: 64 }] },

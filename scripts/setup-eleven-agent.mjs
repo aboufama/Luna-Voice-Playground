@@ -37,13 +37,13 @@ if (!open && hosts.length) throw Error('Hostnames only mean something after --pu
 const file = open ? 'eleven-public-agent.json' : 'eleven-agent-config.json';
 const privacy = { record_voice: false, retention_days: 0, delete_transcript_and_pii: true, delete_audio: true };
 const config = {
-  name: open ? 'Luna UX Playground (public page)' : 'Luna UX Playground',
+  name: open ? 'Plato UX Playground (public page)' : 'Plato UX Playground',
   conversation_config: {
     agent: {
-      first_message: "Hey, it's Luna. What's on your mind?",
+      first_message: "Hey, it's Plato. What's on your mind?",
       language: 'en',
       prompt: {
-        prompt: 'You are Luna, a warm conversational voice. Talk naturally about whatever the person brings up. Keep replies brief and leave room for back-and-forth. Follow their lead. This is a casual conversation, without tasks, study plans, quizzes, scoring, or an onboarding flow.',
+        prompt: 'You are Plato, a warm conversational voice. Talk naturally about whatever the person brings up. Keep replies brief and leave room for back-and-forth. Follow their lead. This is a casual conversation, without tasks, study plans, quizzes, scoring, or an onboarding flow.',
         llm: 'gpt-6-luna',
         tools: [],
         tool_ids: [],
