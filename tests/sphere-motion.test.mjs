@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createSphereField, COURSES, RADIUS } from '../src/sphere/sphere-field.mjs';
-import { createSphereMotion, travel, BANDS, TICK, NOTCH, POP, TURN_TICKS, GREY, LIVE, GREEN, WARM, PAGE, STRIDE, PLACE, FACES, CELL_STRIDE, MOUTH, PIECES, GAPE } from '../src/sphere/sphere-motion.mjs';
+import { createSphereMotion, travel, BANDS, TICK, NOTCH, POP, TURN_TICKS, GREY, LIVE, GREEN, WARM, PAGE, STRIDE, TURN, PLACE, FACES, CELL_STRIDE, MOUTH, CURL } from '../src/sphere/sphere-motion.mjs';
 import { MORTAR, SHELL } from '../src/sphere/sphere-mesh.mjs';
 
 const field = createSphereField();
@@ -303,54 +303,58 @@ const off = (index, bearing, motion) => { const at = field.theta[index] + (motio
 const document = (near, round = .5) => ({ at: [210 * Math.cos(round), -210 * Math.sin(round), RADIUS + 26], aim: [Math.sin(.8) * Math.cos(round), -Math.sin(.8) * Math.sin(round), Math.cos(.8)], near });
 const place = (motion, block) => motion.tiles.subarray(block * STRIDE + PLACE, block * STRIDE + PLACE + 3);
 const seen = (motion, v) => { const m = motion.sway; return [m[0] * v[0] + m[3] * v[1] + m[6] * v[2], m[1] * v[0] + m[4] * v[1] + m[7] * v[2], m[2] * v[0] + m[5] * v[1] + m[8] * v[2]]; };
-const whole = motion => motion.mouth() === null && motion.pieceOf.every(piece => piece < 0) && motion.shell.carried.every((value, at) => value === (at % CELL_STRIDE === 3 ? 1 : 0));
+const whole = motion => motion.mouth() === null && motion.peeled.every(open => !open) && motion.shell.carried.every((value, at) => value === (at % CELL_STRIDE === 3 ? 1 : 0));
 
-test('a document held near cracks the shell open where it faces it: pieces swing out on their far edges like doors on springs, as wide as it is near', () => {
+test('a document held near opens the shell where it faces it: the shell there peels back like a flower, as far as the document is near, and follows it', () => {
   const { motion, run, live } = machine();
   live();
   assert.ok(whole(motion));
-  run(900, { ...quiet, file: document(0) });
-  const crack = motion.mouth(), stones = crack.members.map(socket => field.sockets.stone[socket]).filter(stone => stone >= 0);
-  // Far off, the shell is only cracked: a handful of pieces, each a patch of whole places, each a little way out on its hinge.
-  const gape = () => crack.pieces.map(piece => piece.angle), within = (low, high) => gape().every(angle => angle > low && angle < high);
-  assert.equal(crack.pieces.length, PIECES);
-  assert.ok(crack.members.length > 40 && crack.members.length < 200 && within(GAPE.cracked - .08, GAPE.cracked + .08), `cracked: ${gape().map(angle => angle.toFixed(2))}`);
-  assert.ok(new Set(crack.members.map(socket => motion.pieceOf[socket])).size === PIECES, 'every piece has sockets of its own');
-  // It is where the document faces the sphere, as the viewer sees it.
-  const middle = seen(motion, crack.middle), facing = document(0).aim;
-  assert.ok(middle[0] * facing[0] + middle[1] * facing[1] + middle[2] * facing[2] > .995);
-  // Every stone in a piece has swung outward with it, the further from the hinge the further out; no other stone has moved.
+  const open = () => [...motion.peeled.keys()].filter(socket => motion.peeled[socket]);
   const out = stone => Math.hypot(...place(motion, stone)) - RADIUS - field.seat[stone];
-  const cracked = Math.max(...stones.map(out));
-  assert.ok(cracked > 3 && stones.every(stone => out(stone) > -.2), `stones stand up to ${cracked.toFixed(1)} px out of the cracked shell`);
-  for (let index = 0; index < field.count; index += 7) if (!stones.includes(index) && index !== motion.parts.hand) assert.ok(Math.abs(out(index)) < 1e-3);
-  // A piece is rigid: two of its stones are as far apart as they were in the whole shell.
-  const pair = crack.pieces.map((_, piece) => stones.filter(stone => motion.pieceOf[field.socket[stone]] === piece).slice(0, 2)).find(two => two.length === 2);
-  const apart = () => Math.hypot(...[0, 1, 2].map(axis => place(motion, pair[0])[axis] - place(motion, pair[1])[axis]));
-  const cracked2 = apart();
-  // Nearer, the same pieces stand wider, and how wide follows how near with no steps in it: brought in evenly, a piece
-  // never jumps, and at every distance in between it stands somewhere in between. The rings wait while the shell is open.
-  const stepsBefore = Array.from(motion.steps);
-  let before = gape(), jump = 0, widest = 0;
+  const stonesOf = sockets => sockets.map(socket => field.sockets.stone[socket]).filter(stone => stone >= 0);
+  run(1500, { ...quiet, file: document(0) });
+  const mouth = motion.mouth(), far = open();
+  // Far off, the shell is only cracked: a small place, a little curled, a few stones lifted a little.
+  assert.ok(Math.abs(mouth.reach - MOUTH.cracked) < 1 && Math.abs(mouth.curl - CURL.cracked) < .05, `reach ${mouth.reach.toFixed(1)}, curl ${mouth.curl.toFixed(2)}`);
+  assert.ok(far.length > 8 && far.length < 40, `${far.length} sockets of the shell are open`);
+  const cracked = Math.max(...stonesOf(far).map(out));
+  assert.ok(cracked > 2 && cracked < 10, `stones stand up to ${cracked.toFixed(1)} px out`);
+  // It is where the document faces the sphere, as the viewer sees it; and no stone outside it has moved.
+  const middle = seen(motion, mouth.middle), facing = document(0).aim;
+  assert.ok(middle[0] * facing[0] + middle[1] * facing[1] + middle[2] * facing[2] > .995);
+  for (let index = 0; index < field.count; index += 7) if (!motion.peeled[field.socket[index]] && index !== motion.parts.hand) assert.ok(Math.abs(out(index)) < 1e-3);
+  // A socket of the opening is only turned and carried: the stone set in it is turned by the same turn, and carried with it.
+  for (const socket of far) {
+    const at = socket * CELL_STRIDE, turn = motion.shell.carried.subarray(at, at + 4);
+    assert.ok(Math.abs(Math.hypot(...turn) - 1) < 1e-6);
+    // The turn is about a line lying on the surface: it has no part along the way out from the middle of the opening.
+    assert.ok(Math.abs(turn[0] * mouth.middle[0] + turn[1] * mouth.middle[1] + turn[2] * mouth.middle[2]) < 1e-6);
+  }
+  // Nearer, it is the same opening grown: wider, more curled, with no steps in it. Brought in evenly, nothing jumps,
+  // and the rings wait while the shell is open.
+  const stepsBefore = Array.from(motion.steps), watched = stonesOf(far).slice(0, 6);
+  let before = watched.map(stone => Array.from(place(motion, stone))), jump = 0, reachBefore = mouth.reach, back = 0;
   for (let step = 1; step <= 60; step++) run(50, { ...quiet, file: document(step / 60) }, () => {
-    const now = gape();
-    jump = Math.max(jump, ...now.map((angle, piece) => Math.abs(angle - before[piece])));
-    widest = Math.max(widest, ...now);
-    before = now;
+    watched.forEach((stone, index) => { const now = Array.from(place(motion, stone)); jump = Math.max(jump, Math.hypot(now[0] - before[index][0], now[1] - before[index][1], now[2] - before[index][2])); before[index] = now; });
+    back = Math.max(back, reachBefore - mouth.reach); reachBefore = mouth.reach;
   });
-  assert.ok(jump < .06, `no piece moved more than ${jump.toFixed(3)} radians in a frame`);
-  run(1500, { ...quiet, file: document(.5) });
-  assert.ok(motion.mouth() === crack && within(GAPE.cracked + .25, GAPE.wide - .25), `half way: ${gape().map(angle => angle.toFixed(2))}`);
+  assert.ok(jump < 2.5, `no stone of the opening moved more than ${jump.toFixed(2)} px in a frame`);
+  assert.ok(back < .05, 'the opening only grew as the document came nearer');
   run(1500, { ...quiet, file: document(1) });
-  assert.ok(within(GAPE.wide - .1, GAPE.wide + .1), `wide: ${gape().map(angle => angle.toFixed(2))}`);
-  // No two pieces are doing quite the same thing, and none is quite still: it is alive, not parked.
-  const first = gape();
-  run(300, { ...quiet, file: document(1) });
-  assert.ok(new Set(first.map(angle => angle.toFixed(3))).size > 3 && gape().every((angle, piece) => Math.abs(angle - first[piece]) > 1e-4));
-  const wide = Math.max(...stones.map(out));
-  assert.ok(wide > cracked * 2.5 && wide < MOUTH * 1.1, `wide open, stones stand up to ${wide.toFixed(1)} px out`);
-  assert.ok(Math.abs(apart() - cracked2) < 1e-3, 'the piece did not stretch');
-  assert.deepEqual(Array.from(motion.steps), stepsBefore, 'no ring turned through the break');
+  const wide = open(), widest = Math.max(...stonesOf(wide).map(out));
+  assert.ok(motion.mouth() === mouth && Math.abs(mouth.reach - MOUTH.wide) < 1.5 && Math.abs(mouth.curl - CURL.wide) < .08);
+  assert.ok(wide.length > far.length * 3 && widest > cracked * 3 && widest < MOUTH.wide, `${wide.length} sockets open, stones up to ${widest.toFixed(1)} px out`);
+  assert.deepEqual(Array.from(motion.steps), stepsBefore, 'no ring turned through the opening');
+  // The further in from the rim a socket lies, the further it has been turned: the shell curls, it does not hinge.
+  const turned = socket => 2 * Math.acos(Math.min(1, Math.abs(motion.shell.carried[socket * CELL_STRIDE + 3])));
+  const reachOf = socket => { const n = socket * 3, k = field.sockets.course[socket], d = motion.dial[k], x = Math.cos(d) * field.sockets.normal[n] - Math.sin(d) * field.sockets.normal[n + 1], y = Math.sin(d) * field.sockets.normal[n] + Math.cos(d) * field.sockets.normal[n + 1]; return Math.acos(Math.min(1, x * mouth.middle[0] + y * mouth.middle[1] + field.sockets.normal[n + 2] * mouth.middle[2])) * RADIUS; };
+  const inner = wide.filter(socket => reachOf(socket) < 12), outer = wide.filter(socket => reachOf(socket) > 32);
+  assert.ok(inner.length > 2 && outer.length > 10 && Math.min(...inner.map(turned)) > Math.max(...outer.map(turned)), 'sockets near the middle are turned further than any near the rim');
+  assert.ok(Math.max(...inner.map(turned)) > 1.5 && Math.min(...outer.map(turned)) < .8);
+  // It is never quite still, and it is not the same all the way round.
+  const first = wide.slice(0, 12).map(turned);
+  run(400, { ...quiet, file: document(1) });
+  assert.ok(wide.slice(0, 12).some((socket, index) => Math.abs(turned(socket) - first[index]) > 1e-3));
   // The sheet of pale stones is in the hand, laid out as a page, all showing the page's stone.
   assert.equal(motion.sheet(), 'held');
   for (let stone = 0; stone < field.sheet.count; stone++) {
@@ -358,31 +362,33 @@ test('a document held near cracks the shell open where it faces it: pieces swing
     assert.ok(Math.hypot(at[0] - held[0], at[1] - held[1]) < 14 && Math.abs(at[2] - held[2]) < 2);
     assert.deepEqual(Array.from(motion.tiles.subarray((field.count + stone) * STRIDE + FACES, (field.count + stone) * STRIDE + FACES + 2)), [PAGE, PAGE]);
   }
-  // Held on the other side, the crack shuts and the shell opens again there.
-  run(1500, { ...quiet, file: document(1, 3.4) });
-  const moved = motion.mouth(), there = seen(motion, moved.middle), now = document(1, 3.4).aim;
-  assert.ok(moved !== crack && there[0] * now[0] + there[1] * now[1] + there[2] * now[2] > .995 && moved.pieces.every(piece => piece.angle > GAPE.wide - .1));
-  // Taken away, the pieces go back and the shell is whole: every stone seated, nothing carried.
-  run(1200, quiet);
+  // Moved round to the other side, the same opening goes after it over the surface: it does not shut and open again.
+  let shutOnTheWay = false;
+  run(2200, { ...quiet, file: document(1, 3.4) }, () => { if (motion.mouth() !== mouth || mouth.reach < MOUTH.wide * .8) shutOnTheWay = true; });
+  const there = seen(motion, mouth.middle), now = document(1, 3.4).aim;
+  assert.ok(!shutOnTheWay && there[0] * now[0] + there[1] * now[1] + there[2] * now[2] > .995, 'it followed, open all the way');
+  assert.ok(open().every(socket => !wide.includes(socket)), 'and the shell where it used to be has closed behind it');
+  // Taken away, the shell closes and is whole: every stone seated, nothing carried.
+  run(1500, quiet);
   assert.ok(whole(motion));
   assert.equal(motion.sheet(), 'inside');
   for (let index = 0; index < field.count; index++) if (index !== motion.parts.hand) assert.ok(motion.height[index] === 0 && Math.abs(Math.hypot(...place(motion, index)) - RADIUS - field.seat[index]) < 1e-3);
 });
 
-test('dropped, every stone of the sheet starts for the crack at once and gathers speed into it, the shell snaps shut, and what was swallowed spreads', () => {
+test('dropped, every stone of the sheet starts for the opening at once and gathers speed into it; the ripple leaves as the first goes in; the shell shuts behind the last', () => {
   const { motion, run, live } = machine();
   live();
   run(1500, { ...quiet, file: document(1) });
   const intake = { id: 'reader', at: document(1).at, aim: document(1).aim }, sheet = [...Array(field.sheet.count).keys()].map(stone => field.count + stone);
   const entered = new Map(), began = sheet.map(stone => Array.from(place(motion, stone))), gone = [];
-  let reported = null, shutAt = null, most = 0, pageAtShut = 0, frames = 0, dropped = null;
+  let reported = null, shutAt = null, most = 0, pageBefore = 0, pageAtShut = 0, frames = 0, dropped = null;
   run(5200, { ...quiet, intake }, time => {
     dropped ??= time;
     // How far each stone of the sheet has come from where it was let go, frame by frame.
     if (frames++ < 30) gone.push(sheet.map((stone, index) => Math.hypot(...[0, 1, 2].map(axis => place(motion, stone)[axis] - began[index][axis]))));
     for (const stone of sheet) if (!entered.has(stone) && Math.hypot(...place(motion, stone)) < RADIUS - SHELL) entered.set(stone, time);
-    if (entered.size < sheet.length) pageAtShut = Math.max(pageAtShut, motion.shown.filter(side => side === PAGE).length);
-    if (shutAt === null && motion.mouth() === null) shutAt = time;
+    if (entered.size === 0) pageBefore = Math.max(pageBefore, motion.shown.filter(side => side === PAGE).length);
+    if (shutAt === null && motion.mouth() === null) { shutAt = time; pageAtShut = motion.shown.filter(side => side === PAGE).length; }
     if (reported === null && motion.taken() === 'reader') reported = time;
     most = Math.max(most, motion.shown.filter(side => side === PAGE).length);
   });
@@ -398,17 +404,19 @@ test('dropped, every stone of the sheet starts for the crack at once and gathers
   assert.ok(new Set(times).size > 3 && times.at(-1) <= shutAt && times.at(-1) - dropped < 900, 'all in within a second of the drop, before it shut');
   assert.ok(sheet.every(stone => Math.hypot(...place(motion, stone)) < RADIUS - SHELL - 30) && motion.sheet() === 'inside');
   assert.ok(whole(motion) && reported !== null && reported >= shutAt, 'the shell is whole again, and the page is told once it is in');
-  // Then it spreads: no stone showed the page until the last of the sheet was in; hundreds did at once afterwards; and none is left showing it.
-  assert.equal(pageAtShut, 0);
-  assert.ok(most > 250, `up to ${most} stones showed the page's stone at once`);
+  // It spreads as it is swallowed: no stone showed the page before the first of the sheet was in; many already did
+  // by the time the shell had shut; hundreds did at once; and none is left showing it.
+  assert.equal(pageBefore, 0);
+  assert.ok(pageAtShut > 40, `${pageAtShut} stones already showed the page's stone when the shell shut`);
+  assert.ok(most > 200, `up to ${most} stones showed the page's stone at once`);
   assert.equal(motion.shown.filter(side => side === PAGE).length, 0);
   for (let index = 0; index < field.count; index++) if (index !== motion.parts.hand) assert.ok(motion.height[index] === 0 && !turning(motion, index));
   // Chosen from a file picker there is no drag: the sheet comes from beyond the foot of the page, the shell cracks towards it, and it is swallowed the same way.
   const picked = machine();
   picked.live();
   let opened = 0;
-  picked.run(5200, { ...quiet, intake: { id: 'picked', at: [0, -330, RADIUS + 26], aim: [0, -Math.sin(.84), Math.cos(.84)] } }, () => { opened = Math.max(opened, picked.motion.mouth() ? Math.min(...picked.motion.mouth().pieces.map(piece => piece.angle)) : 0); });
-  assert.ok(opened > GAPE.wide - .15 && picked.motion.taken() === 'picked' && whole(picked.motion));
+  picked.run(5200, { ...quiet, intake: { id: 'picked', at: [0, -330, RADIUS + 26], aim: [0, -Math.sin(.84), Math.cos(.84)] } }, () => { opened = Math.max(opened, picked.motion.mouth() ? picked.motion.mouth().reach : 0); });
+  assert.ok(opened > MOUTH.wide - 3 && picked.motion.taken() === 'picked' && whole(picked.motion));
   // Without motion nothing cracks: the document is simply taken.
   const still = createSphereMotion(field);
   still.step({ state: 'listening', time: 0, intake, reduced: true });

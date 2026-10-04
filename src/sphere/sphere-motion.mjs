@@ -33,31 +33,34 @@ const TERRACES = 8;
 const LUNA_REACH = 150;
 const LUNA_GAIN = 1.5;
 // A document is not a part of the machine, and nothing about taking one in runs on the tick: its stones
-// fall, the broken shell swings, and what is swallowed spreads, each as such things do.
+// fall, the shell opens, and what is swallowed spreads, each as such things do.
 //
-// A document held near the sphere cracks its shell open where it faces the document. The crack reaches this
-// far over the surface from its middle, and breaks the shell there into this many pieces. Each piece swings
-// out on its far edge like a door on a spring: only cracked when the document is far off, wide when it is
-// close, anywhere between in between, a little past where it means to stand before it settles, and never
-// quite still while it is open (radians).
-export const MOUTH = 44, PIECES = 6, GAPE = { cracked: .24, wide: 1.2, breath: .045 };
-// How quickly a piece swings open and how quickly it shuts (radians a millisecond), and how soon each swing dies away.
-const SWING = .019, SHUT = .044, SETTLE = .5, SETTLE_SHUT = .9;
-// If the document comes to be further than this (radians, seen from the sphere's centre) from the middle
-// of the crack, the crack shuts and opens again where the document now is.
-const STRAY = .62;
+// A document held near the sphere opens its shell where it faces the document. The opening is not a thing
+// with parts but a place. Round its middle, out to its reach, the shell peels back as a flower opens: every
+// socket there, stone and mortar together, is turned about the line square to the way to the middle, the
+// more the nearer the middle it lies, so the shell curls up and out and the hollow inside shows. The middle
+// follows the document over the surface; the reach (pixels of surface) and the curl (radians, at the
+// middle) grow as it comes near; and neither the rim nor the curl is the same all the way round, or from
+// one moment to the next.
+export const MOUTH = { cracked: 20, wide: 47 }, CURL = { cracked: .7, wide: 2.2 };
+// How quickly the middle follows the document (milliseconds), how quickly the opening grows and how quickly
+// it shuts (radians a millisecond), and how soon each of those swings dies away.
+const FOLLOWS = 130, OPENS = .014, SHUTS = .034, SETTLE = .58, SETTLE_SHUT = .95;
+// The sphere leans its face this far (radians) towards a document that is close, and nods as it swallows.
+const LEAN = .15, LEANS = .009, NOD = .0009;
 // In the hand, each stone of the sheet follows the pointer in its own time (milliseconds, quickest and slowest).
 const TRAIL = [34, 96];
-// Dropped, every stone of the sheet starts for the crack at the same instant and gathers speed as if it
-// were falling into it: a curve by way of the air this far above the crack, then down the middle of it to
-// its place this far inside. The quickest takes FLY ticks, the slowest SLOWEST more, and none waits for another.
+// Dropped, every stone of the sheet starts for the opening at the same instant and gathers speed as if it
+// were falling into it: a curve by way of the air this far above it, then down the middle of it to its
+// place this far inside. The quickest takes FLY ticks, the slowest SLOWEST more, and none waits for another.
+// A stone is through the shell this far through its fall.
 export const FLY = 4.5, SLOWEST = 2.5;
-const ABOVE = 62, INSIDE = 74, GATHER = 2.3;
-// What the sphere has swallowed spreads through it as a ripple: outward from the crack, this many pixels of
-// surface a tick, each stone in its own turn rises out of its socket, rolls over to the page's stone and
-// seats, and a moment later does the same again to show its own. In ticks: the rise (and the seating), the
-// roll, and the moment between.
-const SPREAD = 13, RISE = .9, ROLL = 1.3, DWELL = 1.4, ONCE = RISE + ROLL + RISE, RIPPLE = ONCE * 2 + DWELL;
+const ABOVE = 62, INSIDE = 74, GATHER = 2.3, THROUGH = .9;
+// What the sphere has swallowed spreads through it as a ripple. It leaves the opening the moment the first
+// stone of the sheet goes in: this many pixels of surface a tick at first, slowing as it goes (to half
+// that pace this many pixels out). Each stone in its turn rises out of its socket, rolls right over,
+// pausing with the page's stone outward, and seats again. In ticks: the rise (and the seating), and the roll.
+const SPREAD = 21, SLOWS = 420, RISE = .7, ROLL = 3.4, RIPPLE = RISE + ROLL + RISE;
 // While a document is still being read, the sphere swallows again this often: once the last ripple has gone right round.
 const AGAIN = 46;
 // A sheet first seen comes in from this far beyond where it is held.
@@ -193,7 +196,7 @@ export function createSphereMotion(field) {
   const angle = new Float32Array(count), height = new Float32Array(count), shown = new Uint8Array(count);
   // The crack: which piece of the broken shell each socket belongs to (none, when the shell is whole),
   // and the crack itself: its middle, its pieces, and how wide it means to stand.
-  const pieceOf = new Int8Array(sockets.count).fill(-1);
+  const peeled = new Uint8Array(sockets.count), ringCos = new Float64Array(COURSES), ringSin = new Float64Array(COURSES), lean = new Float64Array(4);
   let mouth = null, hungry = false, near = 0;
   // Where on the sphere the document faces it (in the sphere's own space), and the sphere's attitude and its undoing.
   const faced = new Float64Array([0, 0, 1]), pose = new Float64Array([0, 0, 0, 1]), unposed = new Float64Array([0, 0, 0, 1]);
@@ -269,75 +272,111 @@ export function createSphereMotion(field) {
     const turned = steps[k] * pitch[k], c = Math.cos(turned), sine = Math.sin(turned);
     return (c * normals[at] - sine * normals[at + 1]) * towards[0] + (sine * normals[at] + c * normals[at + 1]) * towards[1] + normals[at + 2] * towards[2];
   }
-  // The shell breaks where the document faces it, into pieces round the middle of the crack like the slices
-  // of a pie cut by an unsteady hand. Each piece is the sockets of one slice, stones and mortar together,
-  // hinged along its far edge. The break runs between places, so it is as jagged as the stones are.
-  function crack(t) {
-    const middle = Float64Array.from(taking && taking.depart >= 0 ? flightTo : faced), [east, north] = square(middle), born = hash(t + 1, 5) * TAU;
-    const widths = Array.from({ length: PIECES }, (_, piece) => .7 + hash(t + piece * 7 + 3, 9) * .6), whole = widths.reduce((sum, width) => sum + width, 0);
-    const pieces = [];
-    let from = 0;
-    for (let piece = 0; piece < PIECES; piece++) {
-      const width = widths[piece] / whole * TAU, reach = MOUTH * (.8 + hash(t + piece * 13 + 1, 11) * .4), mid = born + from + width / 2, lean = reach / radius;
-      const out = [0, 1, 2].map(axis => Math.cos(mid) * east[axis] + Math.sin(mid) * north[axis]);
-      pieces.push({
-        from, to: from + width, reach, angle: 0, speed: 0, drawn: -1, quick: .82 + hash(t + piece * 3 + 2, 15) * .36, sway: hash(t + piece * 5 + 4, 17) * TAU,
-        // The hinge lies on the surface at the piece's far edge, square to the way back to the middle.
-        hinge: [0, 1, 2].map(axis => (Math.cos(lean) * middle[axis] + Math.sin(lean) * out[axis]) * radius),
-        axis: [middle[1] * out[2] - middle[2] * out[1], middle[2] * out[0] - middle[0] * out[2], middle[0] * out[1] - middle[1] * out[0]],
-        turn: new Float64Array([0, 0, 0, 1]), shift: new Float64Array(3),
-      });
-      from += width;
-    }
-    const members = [], reachable = Math.cos(MOUTH * 1.25 / radius);
-    for (let socket = 0; socket < sockets.count; socket++) {
-      const k = sockets.course[socket], n = socket * 3, towards = facing(sockets.normal, n, k, middle);
-      if (towards < reachable) continue;
-      let round = Math.atan2(facing(sockets.normal, n, k, north), facing(sockets.normal, n, k, east)) - born;
-      round -= Math.floor(round / TAU) * TAU;
-      const piece = Math.max(0, pieces.findIndex(part => round < part.to));
-      if (Math.acos(Math.min(1, towards)) * radius >= pieces[piece].reach) continue;
-      pieceOf[socket] = piece; members.push(socket);
-    }
-    mouth = { middle, pieces, members, wide: GAPE.cracked, shutting: false, strayed: false };
+  // The shell opens where the document faces it. Nothing has moved yet: the opening grows from there.
+  function open() {
+    mouth = {
+      middle: Float64Array.from(taking && taking.depart >= 0 ? flightTo : faced), reach: 0, reaching: 0, curl: 0, curling: 0, shutting: false,
+      // What makes this opening's rim and curl uneven, and not like the last one's.
+      seeds: [5, 7, 9, 11].map(salt => hash(done + 1, salt) * TAU),
+    };
   }
-  // The pieces are back in the shell: it is whole again.
+  // Shut: every socket is back in the shell, and the shell is whole.
   function mend() {
-    for (const socket of mouth.members) {
-      pieceOf[socket] = -1;
+    for (let socket = 0; socket < sockets.count; socket++) if (peeled[socket]) {
+      peeled[socket] = 0;
       shell.carried.fill(0, socket * CELL_STRIDE, (socket + 1) * CELL_STRIDE); shell.carried[socket * CELL_STRIDE + 3] = 1;
     }
     shell.changed++; mouth = null;
   }
-  // The sheet's stones all leave the hand at once, each a little quicker or slower than the next, for the crack at `towards`.
+  // The opening goes after the document over the surface, and grows and curls towards what its nearness asks,
+  // a little past and back, as a thing on a spring does. Shutting is quicker, and ends with a click.
+  function grow(dt, about) {
+    const closing = mouth.shutting || !about, wide = taking ? 1 : smooth(near);
+    const reach = closing ? 0 : MOUTH.cracked + (MOUTH.wide - MOUTH.cracked) * wide, curl = closing ? 0 : CURL.cracked + (CURL.wide - CURL.cracked) * wide;
+    const rate = closing ? SHUTS : OPENS, drag = 2 * (closing ? SETTLE_SHUT : SETTLE) * rate;
+    for (let left = dt; left > 0; left -= 4) {
+      const span = Math.min(4, left);
+      mouth.reaching += (-rate * rate * (mouth.reach - reach) - drag * mouth.reaching) * span; mouth.reach += mouth.reaching * span;
+      mouth.curling += (-rate * rate * (mouth.curl - curl) - drag * mouth.curling) * span; mouth.curl += mouth.curling * span;
+    }
+    if (mouth.reach <= 0 || mouth.curl <= 0 || (closing && (mouth.reach < 1.5 || mouth.curl < .04))) {
+      mouth.reach = mouth.curl = 0; mouth.reaching = Math.max(0, mouth.reaching); mouth.curling = Math.max(0, mouth.curling);
+      if (closing) mouth.reaching = mouth.curling = 0;
+    }
+    // Once the sheet is on its way the middle stays where its stones are aimed.
+    if (!closing && !(taking && taking.depart >= 0)) {
+      for (let axis = 0; axis < 3; axis++) mouth.middle[axis] = follow(mouth.middle[axis], faced[axis], dt, FOLLOWS);
+      const length = Math.hypot(mouth.middle[0], mouth.middle[1], mouth.middle[2]) || 1;
+      mouth.middle[0] /= length; mouth.middle[1] /= length; mouth.middle[2] /= length;
+    }
+  }
+  // Where every socket of the opening is carried to this instant. A socket this side of the rim lies on a
+  // strip of shell that runs from the rim to the middle and has curled up off the sphere; it is turned as
+  // far as the strip has curled where it lies, and carried to its place along the curl.
+  function peel(time) {
+    const m = mouth.middle, [east, north] = square(m), within = Math.cos(Math.min(Math.PI, mouth.reach * 1.3 / radius));
+    let changed = false;
+    for (let k = 0; k < COURSES; k++) { ringCos[k] = Math.cos(steps[k] * pitch[k]); ringSin[k] = Math.sin(steps[k] * pitch[k]); }
+    for (let socket = 0; socket < sockets.count; socket++) {
+      const k = sockets.course[socket], n = socket * 3, at = socket * CELL_STRIDE;
+      const x = ringCos[k] * sockets.normal[n] - ringSin[k] * sockets.normal[n + 1], y = ringSin[k] * sockets.normal[n] + ringCos[k] * sockets.normal[n + 1], z = sockets.normal[n + 2];
+      const towards = x * m[0] + y * m[1] + z * m[2];
+      let carried = false;
+      if (mouth.reach > 0 && towards > within) {
+        const e = x * east[0] + y * east[1] + z * east[2], nn = x * north[0] + y * north[1] + z * north[2], round = Math.atan2(nn, e), flat = Math.hypot(e, nn);
+        const apart = Math.acos(Math.min(1, towards)) * radius;
+        const rim = mouth.reach * (1 + .17 * Math.sin(3 * round + mouth.seeds[0] + time * .0008) + .09 * Math.sin(5 * round + mouth.seeds[1] - time * .0012));
+        if (apart < rim) {
+          const curl = mouth.curl * (1 + .2 * Math.sin(6 * round + mouth.seeds[2]) + .12 * Math.sin(2 * round + mouth.seeds[3] + time * .0017));
+          // How far in from the rim it lies, how tightly the strip is curled, and so how far it is turned.
+          const along = rim - apart, bend = curl / rim, turned = bend * along, own = bend - 1 / radius;
+          // The way from the middle out to it; the rim on that side, the way back in from there, and straight out from there.
+          const dx = flat > 1e-6 ? e / flat : 1, dy = flat > 1e-6 ? nn / flat : 0;
+          const ox = dx * east[0] + dy * north[0], oy = dx * east[1] + dy * north[1], oz = dx * east[2] + dy * north[2];
+          const lie = rim / radius, cl = Math.cos(lie), sl = Math.sin(lie);
+          const upx = cl * m[0] + sl * ox, upy = cl * m[1] + sl * oy, upz = cl * m[2] + sl * oz;
+          const inx = sl * m[0] - cl * ox, iny = sl * m[1] - cl * oy, inz = sl * m[2] - cl * oz;
+          const forward = Math.abs(own) > 1e-7 ? Math.sin(own * along) / own : along, rise = Math.abs(own) > 1e-7 ? (1 - Math.cos(own * along)) / own : 0;
+          const px = upx * radius + forward * inx + rise * upx, py = upy * radius + forward * iny + rise * upy, pz = upz * radius + forward * inz + rise * upz;
+          // The turn is about the line square to the way to the middle: a unit quaternion.
+          const half = turned / 2, sine = Math.sin(half), qw = Math.cos(half);
+          const qx = (m[1] * oz - m[2] * oy) * sine, qy = (m[2] * ox - m[0] * oz) * sine, qz = (m[0] * oy - m[1] * ox) * sine;
+          // And the shift is whatever then brings the socket's own place to its place on the curl.
+          const X = x * radius, Y = y * radius, Z = z * radius;
+          const cx = qy * Z - qz * Y + qw * X, cy = qz * X - qx * Z + qw * Y, cz = qx * Y - qy * X + qw * Z;
+          shell.carried[at] = qx; shell.carried[at + 1] = qy; shell.carried[at + 2] = qz; shell.carried[at + 3] = qw;
+          shell.carried[at + 4] = px - X - 2 * (qy * cz - qz * cy); shell.carried[at + 5] = py - Y - 2 * (qz * cx - qx * cz); shell.carried[at + 6] = pz - Z - 2 * (qx * cy - qy * cx);
+          peeled[socket] = 1; carried = changed = true;
+        }
+      }
+      if (!carried && peeled[socket]) { peeled[socket] = 0; shell.carried.fill(0, at, at + CELL_STRIDE); shell.carried[at + 3] = 1; changed = true; }
+    }
+    if (changed) shell.changed++;
+  }
+  // The sheet's stones all leave the hand at once, each a little quicker or slower than the next, for the opening at `towards`.
+  // Returns when the first of them will be through the shell.
   function launch(at, towards) {
-    for (let stone = 0; stone < sheet; stone++) { flightBegan[stone] = at + hash(stone + 1, 57) * .4; flightLasts[stone] = FLY + hash(stone + 1, 59) * SLOWEST; }
+    let first = Infinity;
+    for (let stone = 0; stone < sheet; stone++) {
+      flightBegan[stone] = at + hash(stone + 1, 57) * .4; flightLasts[stone] = FLY + hash(stone + 1, 59) * SLOWEST;
+      first = Math.min(first, flightBegan[stone] + flightLasts[stone] * THROUGH);
+    }
     flightFrom.set(sheetPlace); flightTurn.set(sheetTurn); flightTo.set(towards);
     sheetIs = 'flying';
+    return first;
   }
-  // What was swallowed spreads from where it went in: it reaches each stone when it has crossed the surface to it.
-  function spread(t, from) {
-    spreadTick = t; spreadFrom = from;
-    for (let index = 0; index < count; index++) if (!rippling[index]) spreadAt[index] = t + .5 + Math.acos(clamp(facing(normal, index * 3, course[index], from), -1, 1)) * radius / SPREAD;
+  // What was swallowed spreads from where it went in, starting at `at`: it reaches each stone when it has
+  // crossed the surface to it, quickly at first and more slowly the further it has come.
+  function spread(at, from) {
+    spreadTick = at; spreadFrom = Float64Array.from(from);
+    for (let index = 0; index < count; index++) if (!rippling[index]) {
+      const far = Math.acos(clamp(facing(normal, index * 3, course[index], from), -1, 1)) * radius;
+      spreadAt[index] = at + (far + far * far / (2 * SLOWS)) / SPREAD;
+    }
   }
 
   // Where a stone of the sheet lies in the sheet, laid out as a page: across, and up.
   const across = stone => (stone % SHEET_ROW - (SHEET_ROW - 1) / 2) * (SHEET_STONE + .8), up = stone => ((sheet / SHEET_ROW - 1) / 2 - Math.floor(stone / SHEET_ROW)) * (SHEET_STONE + .8);
-  // The pieces of a cracked shell swing towards how wide the crack means to stand, each a little in its own time.
-  function swing(dt, time) {
-    const closing = mouth.wide <= 0;
-    for (const piece of mouth.pieces) {
-      const mean = closing ? 0 : mouth.wide + GAPE.breath * Math.sin(time * .0045 + piece.sway), rate = (closing ? SHUT : SWING) * piece.quick, drag = 2 * (closing ? SETTLE_SHUT : SETTLE) * rate;
-      for (let left = dt; left > 0; left -= 4) {
-        const span = Math.min(4, left);
-        piece.speed += (-rate * rate * (piece.angle - mean) - drag * piece.speed) * span;
-        piece.angle += piece.speed * span;
-        // A piece cannot swing into the shell it came from; and shutting, the last hair's breadth is a click.
-        if (piece.angle <= (closing ? .004 : 0)) { piece.angle = 0; piece.speed = Math.max(0, piece.speed); }
-      }
-    }
-  }
-
   // One tick of the machine: decide what every part should be doing and start whatever is free to start.
   function onTick(t) {
     const live = mode === 'listening' || mode === 'speaking', present = live && hearing > .08;
@@ -375,24 +414,22 @@ export function createSphereMotion(field) {
       if (face !== want[k]) { cascade[k] = Number(face <= LIVE && want[k] <= LIVE); want[k] = face; wantTick[k] = t; }
     }
 
-    // A document about. The shell cracks where it faces it, once the rings have come to rest, and holds them
-    // still while it is open; wider the nearer the document comes; and if the document strays, it shuts to open there.
+    // A document about. The shell opens where it faces it, once the rings have come to rest, and holds them still while it is open.
     const about = hungry || Boolean(taking);
-    if (!mouth && about && dialTick.every((began, k) => t - began >= dialTicks[k])) crack(t);
-    if (mouth) {
-      const off = Math.acos(clamp(mouth.middle[0] * faced[0] + mouth.middle[1] * faced[1] + mouth.middle[2] * faced[2], -1, 1));
-      const swallowing = taking && taking.depart >= 0;
-      // Dropped, the sheet's stones are already on their way. As the last of them goes in the crack shuts behind
-      // it, and what was swallowed starts to spread from there at the same moment.
-      if (swallowing && taking.shut < 0 && t >= taking.depart + FLY + SLOWEST) {
+    if (!mouth && about && dialTick.every((began, k) => t - began >= dialTicks[k])) open();
+    if (taking && taking.depart >= 0) {
+      // The ripple leaves as the first stone of the sheet goes in, not after the last.
+      if (!taking.rippled && t + 1 >= taking.ripple) { spread(taking.ripple, flightTo); taking.rippled = true; }
+      // And as the last goes in, the opening shuts behind it.
+      if (taking.shut < 0 && t >= taking.depart + FLY + SLOWEST) {
         taking.shut = t; sheetIs = 'inside';
-        for (let stone = 0; stone < sheet; stone++) settle(stone, mouth.middle, sheetPlace, stone * 3);
-        spread(t, mouth.middle);
+        for (let stone = 0; stone < sheet; stone++) settle(stone, flightTo, sheetPlace, stone * 3);
       }
+    }
+    if (mouth) {
       mouth.shutting = Boolean(taking && taking.shut >= 0);
-      mouth.strayed = Boolean(about && off > STRAY && !taking);
-      // Shut again, every piece back in its place: the shell is whole, and the document, if there was one, is taken.
-      if ((mouth.shutting || mouth.strayed || !about) && mouth.pieces.every(piece => piece.angle === 0)) {
+      // Shut again: the shell is whole, and the document, if there was one, is taken.
+      if ((mouth.shutting || !about) && mouth.reach === 0) {
         mend();
         if (taking && taking.shut >= 0) { taken = taking.id; taking = null; }
       }
@@ -484,7 +521,7 @@ export function createSphereMotion(field) {
     hearing = attentive = reach = clock = handNow = handFrom = handTo = gazeX = gazeY = 0; heardClick = spokenClick = false;
     wasLive = live; liveTick = live ? done - 999 : -999; leaveTick = -999; thinkTick = -999;
     if (mouth) mend();
-    taking = null; hungry = false; spreadTick = -999; spreadFrom = null; flightBegan.fill(-1); heldFor = 0; rippling.fill(0);
+    taking = null; hungry = false; spreadTick = -999; spreadFrom = null; flightBegan.fill(-1); heldFor = 0; rippling.fill(0); lean.fill(0);
     if (sheetIs !== 'inside') { sheetIs = 'inside'; for (let stone = 0; stone < sheet; stone++) settle(stone, [0, 0, 1], sheetPlace, stone * 3); }
     for (let k = 0; k < COURSES; k++) {
       steps[k] = wanted[k] = live ? 0 : home[k]; dialFrom[k] = dialTo[k] = steps[k] * pitch[k]; dialTick[k] = pinTick[k] = wantTick[k] = -99;
@@ -507,27 +544,11 @@ export function createSphereMotion(field) {
     const moving = (now - poseTick) / 2;
     quatAxis(0, 1, 0, yawFrom + (yawTo - yawFrom) * travel(moving), yaw);
     quatAxis(1, 0, 0, pitchFrom + (pitchTo - pitchFrom) * travel(moving), pitching);
-    quatToMat3(quatMul(yaw, pitching, pose), sway);
+    // And it leans its face a little towards a document that is close.
+    const leaning = Math.hypot(lean[0], lean[1]);
+    quatMul(quatAxis(-lean[1], lean[0], 0, leaning, twist), quatMul(yaw, pitching, pose), pose);
+    quatToMat3(pose, sway);
     quatConjugate(pose, unposed);
-    // The pieces of a cracked shell, each swung out on its hinge as far as it has got.
-    if (mouth) {
-      let moved = false;
-      for (const piece of mouth.pieces) {
-        if (piece.angle === piece.drawn) continue;
-        piece.drawn = piece.angle; moved = true;
-        quatAxis(piece.axis[0], piece.axis[1], piece.axis[2], piece.angle, piece.turn);
-        quatRotate(piece.turn, piece.hinge, piece.shift);
-        for (let axis = 0; axis < 3; axis++) piece.shift[axis] = piece.hinge[axis] - piece.shift[axis];
-      }
-      if (moved) {
-        for (const socket of mouth.members) {
-          const piece = mouth.pieces[pieceOf[socket]], at = socket * CELL_STRIDE;
-          shell.carried[at] = piece.turn[0]; shell.carried[at + 1] = piece.turn[1]; shell.carried[at + 2] = piece.turn[2]; shell.carried[at + 3] = piece.turn[3];
-          shell.carried[at + 4] = piece.shift[0]; shell.carried[at + 5] = piece.shift[1]; shell.carried[at + 6] = piece.shift[2];
-        }
-        shell.changed++;
-      }
-    }
     let ring = -1, cz = 1, sz = 0, c1 = 1, s1 = 0, piston = 0;
     for (let index = 0; index < count; index++) {
       const k = course[index], at = index * STRIDE, n = index * 3, f = index * 4;
@@ -544,14 +565,13 @@ export function createSphereMotion(field) {
         lifted = Math.max(lifted, since < 1 ? travel(since) * POP : since < 2 ? POP : (1 - seatDown(since - 2)) * POP);
         if (since >= 1) over += (since < 2 ? travel(since - 1) : 1) * Math.PI;
       }
-      // The ripple: out of its socket, over, and seated; a moment; then the same again. Each part starts and ends gently.
+      // The ripple: up out of its socket, right over with a pause while the page's stone is outward, and down. All of it gently.
       if (rippling[index]) {
         const since = now - spreadAt[index];
         if (since > 0 && since < RIPPLE) {
-          const again = since >= ONCE + DWELL, within = again ? since - ONCE - DWELL : Math.min(since, ONCE);
-          const rolled = smooth((within - RISE) / ROLL);
-          lifted = Math.max(lifted, POP * (within < RISE ? smooth(within / RISE) : within < RISE + ROLL ? 1 : 1 - smooth((within - RISE - ROLL) / RISE)));
-          over += (again ? 1 + rolled : rolled) * Math.PI;
+          const rolling = (since - RISE) / ROLL;
+          lifted = Math.max(lifted, POP * (since < RISE ? smooth(since / RISE) : since < RISE + ROLL ? 1 : 1 - smooth((since - RISE - ROLL) / RISE)));
+          if (rolling > 0) over += (rolling < .5 ? smooth(rolling * 2) : 1 + smooth(Math.min(1, rolling * 2 - 1))) * Math.PI;
         }
       }
       angle[index] = over; height[index] = lifted; shown[index] = Math.cos(over) >= 0 ? sideA[index] : sideB[index];
@@ -569,20 +589,20 @@ export function createSphereMotion(field) {
       tiles[at + PLACE + 2] = normal[n + 2] * out;
       tiles[at + PLACE + 3] = Math.min(1, lifted / 2.6);
       tiles[at + FACES] = sideA[index]; tiles[at + FACES + 1] = sideB[index];
-      // A stone set in a piece of broken shell goes where the piece goes: the piece's turn after its own, about the piece's hinge.
-      const piece = mouth ? pieceOf[socketOf[index]] : -1;
-      if (piece >= 0) {
-        const h = mouth.pieces[piece].turn, shift = mouth.pieces[piece].shift;
+      // A stone set in a socket of the opening goes where the socket goes: the socket's turn after its own, and its shift.
+      const socket = socketOf[index];
+      if (peeled[socket]) {
+        const h = socket * CELL_STRIDE, hx = shell.carried[h], hy = shell.carried[h + 1], hz = shell.carried[h + 2], hw = shell.carried[h + 3];
         const tx = tiles[at + TURN], ty = tiles[at + TURN + 1], tz = tiles[at + TURN + 2], tw = tiles[at + TURN + 3];
-        tiles[at + TURN] = h[3] * tx + h[0] * tw + h[1] * tz - h[2] * ty;
-        tiles[at + TURN + 1] = h[3] * ty - h[0] * tz + h[1] * tw + h[2] * tx;
-        tiles[at + TURN + 2] = h[3] * tz + h[0] * ty - h[1] * tx + h[2] * tw;
-        tiles[at + TURN + 3] = h[3] * tw - h[0] * tx - h[1] * ty - h[2] * tz;
+        tiles[at + TURN] = hw * tx + hx * tw + hy * tz - hz * ty;
+        tiles[at + TURN + 1] = hw * ty - hx * tz + hy * tw + hz * tx;
+        tiles[at + TURN + 2] = hw * tz + hx * ty - hy * tx + hz * tw;
+        tiles[at + TURN + 3] = hw * tw - hx * tx - hy * ty - hz * tz;
         const px = tiles[at + PLACE], py = tiles[at + PLACE + 1], pz = tiles[at + PLACE + 2];
-        const cx = h[1] * pz - h[2] * py + h[3] * px, cy = h[2] * px - h[0] * pz + h[3] * py, cz2 = h[0] * py - h[1] * px + h[3] * pz;
-        tiles[at + PLACE] = px + 2 * (h[1] * cz2 - h[2] * cy) + shift[0];
-        tiles[at + PLACE + 1] = py + 2 * (h[2] * cx - h[0] * cz2) + shift[1];
-        tiles[at + PLACE + 2] = pz + 2 * (h[0] * cy - h[1] * cx) + shift[2];
+        const cx = hy * pz - hz * py + hw * px, cy = hz * px - hx * pz + hw * py, cz2 = hx * py - hy * px + hw * pz;
+        tiles[at + PLACE] = px + 2 * (hy * cz2 - hz * cy) + shell.carried[h + 4];
+        tiles[at + PLACE + 1] = py + 2 * (hz * cx - hx * cz2) + shell.carried[h + 5];
+        tiles[at + PLACE + 2] = pz + 2 * (hx * cy - hy * cx) + shell.carried[h + 6];
       }
     }
     // The sheet's stones: in the hand, in flight, or lying inside.
@@ -628,7 +648,11 @@ export function createSphereMotion(field) {
     const dropped = intake && intake.id !== taken ? intake : null, about = file || dropped;
     if (dropped && !taking) taking = { id: dropped.id, depart: -1, shut: -1 };
     // The instant it is let go (and there is a crack to fall into), every stone of the sheet starts for it.
-    if (taking && taking.depart < 0 && sheetIs === 'held' && heldFor > 0 && mouth) { taking.depart = (now - origin) / TICK; launch(taking.depart, mouth.middle); }
+    if (taking && taking.depart < 0 && sheetIs === 'held' && heldFor > 0 && mouth) {
+      taking.depart = (now - origin) / TICK; taking.ripple = launch(taking.depart, mouth.middle); taking.rippled = false;
+      // It nods towards what it is about to swallow.
+      if (about) { lean[2] += about.aim[0] * NOD; lean[3] += about.aim[1] * NOD; }
+    }
     hungry = Boolean(file);
     if (about) {
       quatRotate(unposed, about.aim, faced);
@@ -659,10 +683,13 @@ export function createSphereMotion(field) {
       const at = stone * 3, far = Math.hypot(held[at], held[at + 1]) || 1, haste = dt * (1.8 + hash(stone + 1, 65) * 1.4);
       held[at] += held[at] / far * haste; held[at + 1] += held[at + 1] / far * haste;
     }
-    // The crack means to stand as wide as the document is near, and its pieces swing towards that.
-    if (mouth) {
-      mouth.wide = mouth.shutting || mouth.strayed || !about ? 0 : taking ? GAPE.wide : GAPE.cracked + (GAPE.wide - GAPE.cracked) * smooth(near);
-      swing(dt, now);
+    // The opening follows the document, as wide as it is near; and the sphere leans a little towards it.
+    if (mouth) { grow(dt, Boolean(about)); peel(now); }
+    const leanX = about && !(taking && taking.shut >= 0) ? about.aim[0] * LEAN * smooth(near) : 0, leanY = about && !(taking && taking.shut >= 0) ? about.aim[1] * LEAN * smooth(near) : 0;
+    for (let left = dt; left > 0; left -= 4) {
+      const span = Math.min(4, left);
+      lean[2] += (-LEANS * LEANS * (lean[0] - leanX) - 1.4 * LEANS * lean[2]) * span; lean[0] += lean[2] * span;
+      lean[3] += (-LEANS * LEANS * (lean[1] - leanY) - 1.4 * LEANS * lean[3]) * span; lean[1] += lean[3] * span;
     }
     const live = state === 'listening' || state === 'speaking';
     heard.push(live ? input : null, live && !input && state === 'listening' ? level : 0, now, dt);
@@ -685,7 +712,7 @@ export function createSphereMotion(field) {
   return {
     step, tiles, sway, dial, shell,
     // For the tests: every stone's turn, height above its seat and outward side; every ring's stop and piston; and the named parts.
-    angle, height, shown, sideA, sideB, steps, pin, want, pitch, home, pieceOf,
+    angle, height, shown, sideA, sideB, steps, pin, want, pitch, home, peeled,
     parts: { limb: LIMB, luna: LUNA, clock: CLOCK, knock: KNOCK, hand, terraceOf, pegs: PEGS },
     tick: () => done,
     // The stone standing for each chapter; the crack, while there is one; where the sheet is; and the last document swallowed.

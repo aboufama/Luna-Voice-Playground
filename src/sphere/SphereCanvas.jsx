@@ -21,8 +21,9 @@ const FRAME = 12;
 const CONTEXT_PATIENCE = 4000;
 // A document this far from the sphere's centre has only just been noticed; at the outline it is as near as it gets.
 const NOTICED = 570;
-// The crack opens where the document faces the sphere, but never further round from the viewer than this (radians).
-const FACING = .84;
+// The shell opens where the document faces the sphere, but never further round from the viewer than this (radians),
+// so that the opening is always seen into and never edge-on.
+const FACING = .74;
 // A document's sheet is held this far in front of the sphere's centre, and this far from the pointer on the
 // sphere's side of it, so that it is not hidden under whatever the pointer is carrying.
 const SHEET_Z = RADIUS + 26, AHEAD = 38;
@@ -89,7 +90,7 @@ export default function SphereCanvas(props) {
       // A pointer that moved a moment ago draws the sphere's face a little towards it.
       const watching = time - pointer.movedAt < GAZE_HOLD;
       gaze.x = (pointer.x - centre.x) / GAZE_RANGE; gaze.y = (pointer.y - centre.y) / GAZE_RANGE;
-      // A document held over the page cracks the sphere open towards it; dropped, it is swallowed from where it fell.
+      // A document held over the page opens the sphere towards it; dropped, it is swallowed from where it fell.
       const now = study.current, held = now.dragging ? dragPositionRef?.current : null;
       // While one is about, its sheet may be anywhere on the page, so the canvas covers the page.
       if (Boolean(held || now.intake) !== whole && !reduced) { whole = !whole; fit(); }
