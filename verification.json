@@ -1,5 +1,5 @@
 {
- "checkedAt": "2026-10-03T20:26:40Z",
+ "checkedAt": "2026-10-04T02:32:42Z",
  "scope": "Mosaic-only Luna conversational UX fork; ElevenLabs only; always-on voice; the mosaic is a hollow stone sphere (flat medallion at /?flat); a dropped PDF is swallowed through a crack in the shell; published as a static site on GitHub Pages",
  "automatedTests": {
   "command": "npm run check",
@@ -136,7 +136,7 @@
   "src/sphere/sphere-math.mjs": "035bcc5ae3dee03f5907be2286247f024ea1c19a69aeaa2aa59c4fd62bc282ec",
   "src/sphere/sphere-mesh.mjs": "903d40574c309ffe3683da38a7ef0d5ed348155c4a2ac63f4567c471a2004ea5",
   "src/sphere/sphere-mortar.mjs": "2a6080e14d639f80b2bcdb8bb215ce99565950d46ba89392bbdc161491beb112",
-  "src/sphere/sphere-motion.mjs": "e7b5c93bcf4c6f1e121f89da8df2fa5dcb238273810717ab8c0448f8ce100e20",
+  "src/sphere/sphere-motion.mjs": "e934a1c5faf4b65e1fe785d42523395a9b0e435ab2aa2efa0d9f187b1245a6e4",
   "src/sphere/sphere-renderer.mjs": "d0fa4307b8b3ffe6f0e63977924a245f079f71825ee651b3f14ba713eb294eff",
   "src/sphere/sphere-rock.mjs": "344227019f705a6d98e7d8d08ed76a7c7938fb85e28fa26e23d18a32cc1671ac",
   "vite.config.js": "82ea128e8b56b36755e1426f77a55e8625a75805556b829540829d2d5c51bad0",
@@ -159,7 +159,8 @@
    "a real drag from Finder with the operating system's own drag image over the page",
    "frame cost of the cell shell on a phone or an integrated GPU: it draws about 400,000 triangles twice a frame",
    "the flat medallion, which keeps its older intake and now has no chapter list beside it"
-  ]
+  ],
+  "smoothed": "After the owner found the first version 'too rigid ... like keyframes playing one after another': all nine sheet stones now start at the drop and accelerate along a curve (seen at +97, +237, +393 ms after the drop as one loosening cluster, all in by about half a second); the pieces of shell are spring-hinged and follow the document's distance continuously; the ripple reaches each stone at its own moment instead of ring by ring on the tick. By test: a tenth of a second after the drop all nine have moved and none slows on the way in; no piece jumps more than 0.06 rad in a frame; no two pieces stand alike or still."
  },
  "staticSite": {
   "address": "https://aboufama.github.io/Luna-Voice-Playground/",
